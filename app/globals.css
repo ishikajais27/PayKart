@@ -1,0 +1,20 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #0a0f1e;
+  color: #e2e8f0;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}

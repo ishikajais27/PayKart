@@ -1,0 +1,25 @@
+import { NextRequest } from 'next/server'
+import { authenticate } from '@/middleware/auth.middleware'
+import { authorize } from '@/middleware/role.middleware'
+import { getSummary } from '@/services/dashboard.service'
+import { successResponse, errorResponse } from '@/lib/response'
+import { TokenPayload } from '@/types'
+
+export async function GET(req: NextRequest) {
+  try {
+    const auth = authenticate(req)
+    if (auth instanceof Response) return auth
+    const user = auth as TokenPayload
+
+    const denied = authorize(user.role, ['ANALYST', 'ADMIN'])
+    if (denied) return denied
+
+    const data = await getSummary(user.id, user.role)
+    return successResponse(data)
+  } catch (err: unknown) {
+    return errorResponse(
+      err instanceof Error ? err.message : 'Something went wrong',
+      500,
+    )
+  }
+}
