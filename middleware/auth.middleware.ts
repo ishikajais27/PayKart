@@ -1,18 +1,19 @@
 import { NextRequest } from 'next/server'
 import { verifyToken } from '@/lib/auth'
-import { errorResponse } from '@/lib/response'
+import { error } from '@/lib/response'
 
 export function authenticate(req: NextRequest) {
-  // Support both cookie (httpOnly) and Bearer token header
-  const cookie = req.cookies.get('token')?.value
-  const header = req.headers.get('authorization')?.replace('Bearer ', '')
-  const token = cookie || header
+  // Try cookie first, then Authorization header
+  const cookieToken = req.cookies.get('token')?.value
+  const headerToken = req.headers.get('authorization')?.replace('Bearer ', '')
+  const token = cookieToken || headerToken
 
-  if (!token) return errorResponse('Unauthorized', 401)
+  if (!token) return error('Unauthorized', 401)
 
   try {
-    return verifyToken(token)
+    const payload = verifyToken(token)
+    return payload
   } catch {
-    return errorResponse('Invalid token', 401)
+    return error('Invalid or expired token', 401)
   }
 }

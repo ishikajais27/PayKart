@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { authenticate } from '@/middleware/auth.middleware'
 import { authorize } from '@/middleware/role.middleware'
 import { getSummary } from '@/services/dashboard.service'
-import { successResponse, errorResponse } from '@/lib/response'
+import { success, error } from '@/lib/response'
 import { TokenPayload } from '@/types'
 
 export async function GET(req: NextRequest) {
@@ -15,9 +15,9 @@ export async function GET(req: NextRequest) {
     if (denied) return denied
 
     const data = await getSummary(user.id, user.role)
-    return successResponse(data)
+    return success(data)
   } catch (err: unknown) {
-    return errorResponse(
+    return error(
       err instanceof Error ? err.message : 'Something went wrong',
       500,
     )
