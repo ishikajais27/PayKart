@@ -1,8 +1,10 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
-interface FinRecord {
+type Tab = 'records' | 'transfers' | 'export'
+
+interface FinancialRecord {
   id: string
   amount: number
   type: 'INCOME' | 'EXPENSE'
@@ -11,1176 +13,609 @@ interface FinRecord {
   notes?: string
 }
 
-interface Summary {
-  totalIncome: number
-  totalExpenses: number
-  netBalance: number
-  categoryTotals: Record<string, number>
+interface Transfer {
+  id: string
+  amount: number
+  notes?: string
+  createdAt: string
+  from: { id: string; name: string; email: string }
+  to: { id: string; name: string; email: string }
 }
 
-interface TrendPoint {
-  income: number
-  expense: number
+type StyleMap = { [key: string]: React.CSSProperties }
+
+const S: StyleMap = {
+  page: {
+    minHeight: '100vh',
+    background: '#0a0f1e',
+    color: '#e2e8f0',
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  sidebar: {
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: '220px',
+    background: 'rgba(255,255,255,0.03)',
+    borderRight: '1px solid rgba(255,255,255,0.07)',
+    padding: '24px 0',
+    display: 'flex',
+    flexDirection: 'column',
+    zIndex: 10,
+  },
+  logo: {
+    padding: '0 20px 24px',
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    marginBottom: '8px',
+  },
+  logoText: { fontSize: '16px', fontWeight: 700, color: '#f1f5f9' },
+  logoBadge: {
+    fontSize: '10px',
+    background: 'rgba(99,102,241,0.15)',
+    border: '1px solid rgba(99,102,241,0.3)',
+    color: '#818cf8',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontWeight: 600,
+    letterSpacing: '0.06em',
+  },
+  navBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 20px',
+    background: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    textAlign: 'left',
+    width: '100%',
+  },
+  navBtnActive: {
+    color: '#f1f5f9',
+    background: 'rgba(99,102,241,0.12)',
+    borderLeft: '3px solid #6366f1',
+  },
+  main: { marginLeft: '220px', padding: '32px' },
+  card: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '16px',
+    padding: '24px',
+  },
+  h2: {
+    fontSize: '20px',
+    fontWeight: 700,
+    color: '#f1f5f9',
+    marginBottom: '20px',
+  },
+  label: {
+    display: 'block',
+    marginBottom: '6px',
+    fontSize: '13px',
+    fontWeight: 500,
+    color: '#94a3b8',
+  },
+  input: {
+    width: '100%',
+    padding: '10px 12px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '8px',
+    color: '#f1f5f9',
+    fontSize: '14px',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  btnGreen: {
+    padding: '10px 20px',
+    background: 'linear-gradient(135deg,#10b981,#059669)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  th: {
+    padding: '10px 14px',
+    textAlign: 'left',
+    color: '#64748b',
+    fontSize: '12px',
+    fontWeight: 600,
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    letterSpacing: '0.04em',
+  },
+  td: {
+    padding: '12px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    color: '#cbd5e1',
+    verticalAlign: 'top',
+  },
+  success: {
+    background: 'rgba(16,185,129,0.1)',
+    border: '1px solid rgba(16,185,129,0.25)',
+    color: '#34d399',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    fontSize: '14px',
+    marginBottom: '16px',
+  },
+  errorBox: {
+    background: 'rgba(239,68,68,0.1)',
+    border: '1px solid rgba(239,68,68,0.3)',
+    color: '#f87171',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    fontSize: '14px',
+    marginBottom: '16px',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+  },
 }
 
-function LoadingScreen() {
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#0a0f1e',
-      }}
-    >
-      <div style={{ color: '#f59e0b', fontSize: '16px' }}>Loading...</div>
-    </div>
-  )
-}
+const NAV = [
+  { id: 'records', label: 'Records', icon: '📋' },
+  { id: 'transfers', label: 'Transfers', icon: '💸' },
+  { id: 'export', label: 'Export', icon: '📤' },
+]
 
 export default function AnalystDashboard() {
-  const { user, loading: authLoading, logout } = useAuth('ANALYST')
-  const [records, setRecords] = useState<FinRecord[]>([])
-  const [summary, setSummary] = useState<Summary | null>(null)
-  const [trends, setTrends] = useState<Record<string, TrendPoint>>({})
-  const [recentActivity, setRecentActivity] = useState<FinRecord[]>([])
-  const [trendPeriod, setTrendPeriod] = useState<'monthly' | 'weekly'>(
-    'monthly',
-  )
-  const [filterType, setFilterType] = useState('')
-  const [filterCategory, setFilterCategory] = useState('')
-  const [filterStart, setFilterStart] = useState('')
-  const [filterEnd, setFilterEnd] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'transactions' | 'insights'
-  >('overview')
-  const [addOpen, setAddOpen] = useState(false)
-  const [form, setForm] = useState({
-    amount: '',
-    type: 'EXPENSE',
-    category: '',
-    date: '',
-    notes: '',
+  const router = useRouter()
+  const [tab, setTab] = useState<Tab>('records')
+  const [name, setName] = useState('')
+  const [userId, setUserId] = useState('')
+  const [balance, setBalance] = useState(0)
+
+  const [records, setRecords] = useState<FinancialRecord[]>([])
+  const [transfers, setTransfers] = useState<Transfer[]>([])
+
+  const [toEmail, setToEmail] = useState('')
+  const [amount, setAmount] = useState('')
+  const [txNotes, setTxNotes] = useState('')
+  const [txMsg, setTxMsg] = useState('')
+  const [txErr, setTxErr] = useState('')
+  const [txLoading, setTxLoading] = useState(false)
+
+  const [expFormat, setExpFormat] = useState<'csv' | 'json'>('csv')
+  const [expType, setExpType] = useState('')
+  const [expStart, setExpStart] = useState('')
+  const [expEnd, setExpEnd] = useState('')
+  const [expMsg, setExpMsg] = useState('')
+
+  const getToken = () => localStorage.getItem('token') || ''
+  const hdrs = (): { [key: string]: string } => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${getToken()}`,
   })
-  const [formError, setFormError] = useState('')
-  const [formLoading, setFormLoading] = useState(false)
 
-  const fetchAll = useCallback(async () => {
-    if (!user) return
-    setLoading(true)
-    const [recRes, sumRes, trendRes, actRes] = await Promise.all([
-      fetch('/api/records'),
-      fetch('/api/dashboard/summary'),
-      fetch(`/api/dashboard/trends?period=${trendPeriod}`),
-      fetch('/api/dashboard/activity'),
-    ])
-    const [recJson, sumJson, trendJson, actJson] = await Promise.all([
-      recRes.json(),
-      sumRes.json(),
-      trendRes.json(),
-      actRes.json(),
-    ])
-    if (recJson.success) setRecords(recJson.data)
-    if (sumJson.success) setSummary(sumJson.data)
-    if (trendJson.success) setTrends(trendJson.data)
-    if (actJson.success) setRecentActivity(actJson.data)
-    setLoading(false)
-  }, [user, trendPeriod])
+  const fetchBalance = useCallback(async () => {
+    const res = await fetch('/api/auth/me', { headers: hdrs() })
+    const json = await res.json()
+    if (json.success) setBalance(json.data.balance ?? 0)
+  }, [])
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
-
-  async function fetchRecords(type = '', category = '', start = '', end = '') {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (type) params.set('type', type)
-    if (category) params.set('category', category)
-    if (start) params.set('startDate', start)
-    if (end) params.set('endDate', end)
-    const res = await fetch(`/api/records?${params}`)
+  const fetchRecords = useCallback(async () => {
+    const res = await fetch('/api/records', { headers: hdrs() })
     const json = await res.json()
     if (json.success) setRecords(json.data)
-    setLoading(false)
-  }
+  }, [])
 
-  async function handleAddRecord() {
-    setFormError('')
-    if (!form.amount || !form.category || !form.date) {
-      setFormError('Amount, category and date are required')
-      return
-    }
-    setFormLoading(true)
-    const res = await fetch('/api/records', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, amount: parseFloat(form.amount) }),
-    })
+  const fetchTransfers = useCallback(async () => {
+    const res = await fetch('/api/transfers', { headers: hdrs() })
     const json = await res.json()
-    if (!json.success) {
-      setFormError(json.message)
-      setFormLoading(false)
+    if (json.success) setTransfers(json.data)
+  }, [])
+
+  useEffect(() => {
+    setName(localStorage.getItem('name') || '')
+    setUserId(localStorage.getItem('userId') || '')
+    fetchBalance()
+  }, [fetchBalance])
+
+  useEffect(() => {
+    if (tab === 'records') fetchRecords()
+  }, [tab, fetchRecords])
+  useEffect(() => {
+    if (tab === 'transfers') {
+      fetchTransfers()
+      fetchBalance()
+    }
+  }, [tab, fetchTransfers, fetchBalance])
+
+  async function sendMoney() {
+    setTxMsg('')
+    setTxErr('')
+    if (!toEmail || !amount) {
+      setTxErr('Email and amount required.')
       return
     }
-    setAddOpen(false)
-    setForm({ amount: '', type: 'EXPENSE', category: '', date: '', notes: '' })
-    fetchAll()
-    setFormLoading(false)
+    setTxLoading(true)
+    try {
+      const res = await fetch('/api/transfers', {
+        method: 'POST',
+        headers: hdrs(),
+        body: JSON.stringify({
+          toEmail,
+          amount: parseFloat(amount),
+          notes: txNotes,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setTxMsg(json.data.message)
+        setToEmail('')
+        setAmount('')
+        setTxNotes('')
+        fetchTransfers()
+        fetchBalance()
+      } else setTxErr(json.message)
+    } finally {
+      setTxLoading(false)
+    }
   }
 
-  async function handleEditRecord(id: string) {
-    const rec = records.find((r) => r.id === id)
-    if (!rec) return
-    const newAmount = prompt('New amount:', String(rec.amount))
-    const newNotes = prompt('New notes:', rec.notes || '')
-    if (!newAmount) return
-    await fetch(`/api/records/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: parseFloat(newAmount),
-        notes: newNotes || '',
-      }),
+  async function handleExport() {
+    setExpMsg('')
+    const params = new URLSearchParams({ export: expFormat })
+    if (expType) params.append('type', expType)
+    if (expStart) params.append('startDate', expStart)
+    if (expEnd) params.append('endDate', expEnd)
+    const res = await fetch(`/api/records?${params.toString()}`, {
+      headers: hdrs(),
     })
-    fetchAll()
+    if (!res.ok) {
+      setExpMsg('Export failed.')
+      return
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `records.${expFormat}`
+    a.click()
+    URL.revokeObjectURL(url)
+    setExpMsg('Exported successfully.')
   }
 
-  const savings = summary
-    ? ((summary.netBalance / (summary.totalIncome || 1)) * 100).toFixed(1)
-    : '0'
-  const topCategory = summary
-    ? Object.entries(summary.categoryTotals).sort((a, b) => b[1] - a[1])[0]
-    : null
-  const trendEntries = Object.entries(trends).slice(-6)
+  function logout() {
+    localStorage.clear()
+    router.push('/login')
+  }
 
-  if (authLoading) return <LoadingScreen />
-  const s = analystStyles()
+  const typeColor = (t: string): React.CSSProperties =>
+    t === 'INCOME'
+      ? { background: 'rgba(16,185,129,0.15)', color: '#34d399' }
+      : { background: 'rgba(239,68,68,0.15)', color: '#f87171' }
 
   return (
-    <div style={s.page}>
-      {/* NAV */}
-      <nav style={s.nav}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={s.logo}>💰 PayKart</span>
-          <span style={s.roleBadge}>ANALYST</span>
+    <div style={S.page}>
+      <div style={S.sidebar}>
+        <div style={S.logo}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span style={S.logoText}>FinanceApp</span>
+            <span style={S.logoBadge}>ANALYST</span>
+          </div>
+          <div style={{ marginTop: '8px', fontSize: '13px', color: '#64748b' }}>
+            {name}
+          </div>
+          <div
+            style={{
+              marginTop: '4px',
+              fontSize: '13px',
+              color: '#34d399',
+              fontWeight: 600,
+            }}
+          >
+            ₹{balance.toLocaleString('en-IN')}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {(['overview', 'transactions', 'insights'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={s.tabBtn(activeTab === tab)}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '14px' }}>
-            {user?.name}
-          </span>
-          <button onClick={logout} style={s.logoutBtn}>
-            Logout
+        {NAV.map((n) => (
+          <button
+            key={n.id}
+            style={{ ...S.navBtn, ...(tab === n.id ? S.navBtnActive : {}) }}
+            onClick={() => setTab(n.id as Tab)}
+          >
+            <span>{n.icon}</span> {n.label}
           </button>
-        </div>
-      </nav>
+        ))}
+        <div style={{ flex: 1 }} />
+        <button style={{ ...S.navBtn, color: '#f87171' }} onClick={logout}>
+          🚪 Logout
+        </button>
+      </div>
 
-      <div style={s.main}>
-        {/* OVERVIEW TAB */}
-        {activeTab === 'overview' && (
-          <>
-            <div style={{ marginBottom: '28px' }}>
-              <h1 style={s.title}>Analyst Dashboard</h1>
-              <p
-                style={{ color: '#64748b', fontSize: '15px', marginTop: '4px' }}
-              >
-                Advanced financial insights & analytics
-              </p>
-            </div>
-
-            {/* KPI CARDS */}
-            <div style={s.statsRow}>
-              {[
-                {
-                  label: 'Total Income',
-                  val: `₹${(summary?.totalIncome || 0).toLocaleString()}`,
-                  color: '#10b981',
-                  sub: 'All credits',
-                },
-                {
-                  label: 'Total Expenses',
-                  val: `₹${(summary?.totalExpenses || 0).toLocaleString()}`,
-                  color: '#ef4444',
-                  sub: 'All debits',
-                },
-                {
-                  label: 'Net Balance',
-                  val: `₹${(summary?.netBalance || 0).toLocaleString()}`,
-                  color:
-                    (summary?.netBalance || 0) >= 0 ? '#6366f1' : '#ef4444',
-                  sub: 'Income - Expenses',
-                },
-                {
-                  label: 'Savings Rate',
-                  val: `${savings}%`,
-                  color: '#f59e0b',
-                  sub: 'Of total income',
-                },
-              ].map((c) => (
-                <div key={c.label} style={s.statCard(c.color)}>
-                  <p style={s.statLabel}>{c.label}</p>
-                  <p
-                    style={{
-                      fontSize: '24px',
-                      fontWeight: 700,
-                      color: c.color,
-                      margin: '8px 0 4px',
-                    }}
-                  >
-                    {c.val}
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#475569' }}>{c.sub}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* TREND CHART (visual bars) */}
-            <div style={s.card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '20px',
-                }}
-              >
-                <h3 style={s.cardTitle}>Income vs Expense Trends</h3>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(['monthly', 'weekly'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setTrendPeriod(p)}
-                      style={s.periodBtn(trendPeriod === p)}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {trendEntries.length === 0 ? (
-                <p style={{ color: '#475569', fontSize: '14px' }}>
-                  No trend data available.
-                </p>
-              ) : (
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    alignItems: 'flex-end',
-                    height: '160px',
-                  }}
-                >
-                  {trendEntries.map(([key, val]) => {
-                    const max = Math.max(
-                      ...trendEntries.map(([, v]) =>
-                        Math.max(v.income, v.expense),
+      <div style={S.main}>
+        {tab === 'records' && (
+          <div style={S.card}>
+            <h2 style={S.h2}>Your Records</h2>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={S.table}>
+                <thead>
+                  <tr>
+                    {['Category', 'Type', 'Amount', 'Date', 'Notes'].map(
+                      (h) => (
+                        <th key={h} style={S.th}>
+                          {h}
+                        </th>
                       ),
-                      1,
-                    )
-                    return (
-                      <div
-                        key={key}
-                        style={{
-                          flex: 1,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '4px',
-                          height: '100%',
-                          justifyContent: 'flex-end',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            gap: '3px',
-                            alignItems: 'flex-end',
-                            height: '130px',
-                          }}
-                        >
-                          <div
-                            title={`Income: ₹${val.income}`}
-                            style={{
-                              flex: 1,
-                              background: 'rgba(16,185,129,0.6)',
-                              borderRadius: '4px 4px 0 0',
-                              height: `${(val.income / max) * 100}%`,
-                              minHeight: '4px',
-                            }}
-                          />
-                          <div
-                            title={`Expense: ₹${val.expense}`}
-                            style={{
-                              flex: 1,
-                              background: 'rgba(239,68,68,0.6)',
-                              borderRadius: '4px 4px 0 0',
-                              height: `${(val.expense / max) * 100}%`,
-                              minHeight: '4px',
-                            }}
-                          />
-                        </div>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            color: '#64748b',
-                            textAlign: 'center',
-                            wordBreak: 'break-all',
-                          }}
-                        >
-                          {key.split('-').slice(1).join('-')}
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((r) => (
+                    <tr key={r.id}>
+                      <td style={S.td}>{r.category}</td>
+                      <td style={S.td}>
+                        <span style={{ ...S.badge, ...typeColor(r.type) }}>
+                          {r.type}
                         </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-                <span style={{ fontSize: '12px', color: '#34d399' }}>
-                  ■ Income
-                </span>
-                <span style={{ fontSize: '12px', color: '#f87171' }}>
-                  ■ Expense
-                </span>
-              </div>
-            </div>
-
-            {/* RECENT ACTIVITY */}
-            <div style={s.card}>
-              <h3 style={{ ...s.cardTitle, marginBottom: '16px' }}>
-                Recent Activity
-              </h3>
-              {recentActivity.slice(0, 8).map((r) => (
-                <div
-                  key={r.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '10px 0',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                    }}
-                  >
-                    <span style={{ fontSize: '18px' }}>
-                      {r.type === 'INCOME' ? '💚' : '🔴'}
-                    </span>
-                    <div>
-                      <p
+                      </td>
+                      <td style={S.td}>₹{r.amount.toLocaleString('en-IN')}</td>
+                      <td style={S.td}>
+                        {new Date(r.date).toLocaleDateString()}
+                      </td>
+                      <td style={S.td}>{r.notes || '—'}</td>
+                    </tr>
+                  ))}
+                  {records.length === 0 && (
+                    <tr>
+                      <td
                         style={{
-                          color: '#e2e8f0',
-                          fontSize: '14px',
-                          fontWeight: 500,
+                          ...S.td,
+                          textAlign: 'center',
+                          color: '#64748b',
                         }}
+                        colSpan={5}
                       >
-                        {r.category}
-                      </p>
-                      <p style={{ color: '#475569', fontSize: '12px' }}>
-                        {new Date(r.date).toLocaleDateString('en-IN')}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    style={{
-                      color: r.type === 'INCOME' ? '#10b981' : '#ef4444',
-                      fontWeight: 700,
-                      fontSize: '14px',
-                    }}
-                  >
-                    {r.type === 'INCOME' ? '+' : '-'}₹
-                    {r.amount.toLocaleString()}
-                  </span>
-                </div>
-              ))}
+                        No records found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          </>
+          </div>
         )}
 
-        {/* TRANSACTIONS TAB */}
-        {activeTab === 'transactions' && (
-          <>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '24px',
-              }}
-            >
-              <h1 style={s.title}>Transactions</h1>
-              <button onClick={() => setAddOpen(true)} style={s.addBtn}>
-                + Add Record
-              </button>
-            </div>
-
-            {/* FILTERS */}
-            <div style={s.filterBox}>
-              <div style={s.filterGroup}>
-                <label style={s.filterLabel}>Type</label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  style={s.select}
-                >
-                  <option value="">All</option>
-                  <option value="INCOME">Income</option>
-                  <option value="EXPENSE">Expense</option>
-                </select>
-              </div>
-              <div style={s.filterGroup}>
-                <label style={s.filterLabel}>Category</label>
-                <input
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  placeholder="e.g. Food"
-                  style={s.input}
-                />
-              </div>
-              <div style={s.filterGroup}>
-                <label style={s.filterLabel}>From</label>
-                <input
-                  type="date"
-                  value={filterStart}
-                  onChange={(e) => setFilterStart(e.target.value)}
-                  style={s.input}
-                />
-              </div>
-              <div style={s.filterGroup}>
-                <label style={s.filterLabel}>To</label>
-                <input
-                  type="date"
-                  value={filterEnd}
-                  onChange={(e) => setFilterEnd(e.target.value)}
-                  style={s.input}
-                />
-              </div>
-              <button
-                onClick={() =>
-                  fetchRecords(
-                    filterType,
-                    filterCategory,
-                    filterStart,
-                    filterEnd,
-                  )
-                }
-                style={s.filterBtn}
-              >
-                Apply
-              </button>
-              <button
-                onClick={() => {
-                  setFilterType('')
-                  setFilterCategory('')
-                  setFilterStart('')
-                  setFilterEnd('')
-                  fetchRecords()
-                }}
-                style={s.resetBtn}
-              >
-                Reset
-              </button>
-            </div>
-
-            <div style={s.tableWrap}>
+        {tab === 'transfers' && (
+          <div
+            style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+          >
+            <div style={S.card}>
+              <h2 style={S.h2}>Send Money</h2>
               <div
                 style={{
-                  padding: '16px 20px',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '16px',
+                  marginBottom: '16px',
                 }}
               >
-                <span style={{ color: '#f1f5f9', fontWeight: 600 }}>
-                  All Records
-                </span>
-                <span style={{ color: '#64748b', fontSize: '13px' }}>
-                  {records.length} records
+                <div>
+                  <label style={S.label}>Receiver Email</label>
+                  <input
+                    style={S.input}
+                    type="email"
+                    value={toEmail}
+                    onChange={(e) => setToEmail(e.target.value)}
+                    placeholder="receiver@example.com"
+                  />
+                </div>
+                <div>
+                  <label style={S.label}>Amount (₹)</label>
+                  <input
+                    style={S.input}
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0"
+                    min="1"
+                  />
+                </div>
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={S.label}>Notes (optional)</label>
+                <input
+                  style={S.input}
+                  value={txNotes}
+                  onChange={(e) => setTxNotes(e.target.value)}
+                  placeholder="Payment for..."
+                />
+              </div>
+              {txMsg && <div style={S.success}>{txMsg}</div>}
+              {txErr && <div style={S.errorBox}>{txErr}</div>}
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '16px' }}
+              >
+                <button
+                  style={S.btnGreen}
+                  onClick={sendMoney}
+                  disabled={txLoading}
+                >
+                  {txLoading ? 'Sending...' : '💸 Send Money'}
+                </button>
+                <span style={{ fontSize: '13px', color: '#64748b' }}>
+                  Balance:{' '}
+                  <strong style={{ color: '#34d399' }}>
+                    ₹{balance.toLocaleString('en-IN')}
+                  </strong>
                 </span>
               </div>
-              {loading ? (
-                <div
-                  style={{
-                    padding: '40px',
-                    textAlign: 'center',
-                    color: '#64748b',
-                  }}
-                >
-                  Loading...
-                </div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            </div>
+
+            <div style={S.card}>
+              <h2 style={S.h2}>Your Transfer History</h2>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={S.table}>
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <tr>
                       {[
-                        'Date',
-                        'Category',
-                        'Type',
+                        'Direction',
+                        'Other Party',
                         'Amount',
                         'Notes',
-                        'Edit',
+                        'Date',
                       ].map((h) => (
-                        <th key={h} style={s.th}>
+                        <th key={h} style={S.th}>
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {records.map((r, i) => (
-                      <tr
-                        key={r.id}
-                        style={{
-                          borderBottom: '1px solid rgba(255,255,255,0.04)',
-                          background:
-                            i % 2 === 0
-                              ? 'transparent'
-                              : 'rgba(255,255,255,0.01)',
-                        }}
-                      >
-                        <td style={s.td}>
-                          {new Date(r.date).toLocaleDateString('en-IN')}
-                        </td>
-                        <td style={s.td}>
-                          <span style={s.categoryTag}>{r.category}</span>
-                        </td>
-                        <td style={s.td}>
-                          <span style={s.typeBadge(r.type)}>{r.type}</span>
-                        </td>
-                        <td
-                          style={{
-                            ...s.td,
-                            fontWeight: 600,
-                            color: r.type === 'INCOME' ? '#10b981' : '#ef4444',
-                          }}
-                        >
-                          {r.type === 'INCOME' ? '+' : '-'}₹
-                          {r.amount.toLocaleString()}
-                        </td>
-                        <td
-                          style={{
-                            ...s.td,
-                            color: '#64748b',
-                            fontSize: '13px',
-                          }}
-                        >
-                          {r.notes || '—'}
-                        </td>
-                        <td style={s.td}>
-                          <button
-                            onClick={() => handleEditRecord(r.id)}
-                            style={s.editBtn}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* INSIGHTS TAB */}
-        {activeTab === 'insights' && (
-          <>
-            <div style={{ marginBottom: '28px' }}>
-              <h1 style={s.title}>Financial Insights</h1>
-              <p
-                style={{ color: '#64748b', fontSize: '15px', marginTop: '4px' }}
-              >
-                Deep-dive analytics for better decisions
-              </p>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-              }}
-            >
-              {/* Category Breakdown */}
-              <div style={s.card}>
-                <h3 style={{ ...s.cardTitle, marginBottom: '16px' }}>
-                  Category-wise Spending
-                </h3>
-                {summary &&
-                  Object.entries(summary.categoryTotals)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([cat, amt]) => {
-                      const max = Math.max(
-                        ...Object.values(summary.categoryTotals),
-                      )
-                      const pct = ((amt / max) * 100).toFixed(0)
+                    {transfers.map((t) => {
+                      const isSender = t.from.id === userId
                       return (
-                        <div key={cat} style={{ marginBottom: '12px' }}>
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              marginBottom: '4px',
-                            }}
-                          >
-                            <span
-                              style={{ color: '#e2e8f0', fontSize: '13px' }}
-                            >
-                              {cat}
-                            </span>
+                        <tr key={t.id}>
+                          <td style={S.td}>
                             <span
                               style={{
-                                color: '#f59e0b',
-                                fontSize: '13px',
-                                fontWeight: 600,
+                                ...S.badge,
+                                ...(isSender
+                                  ? {
+                                      background: 'rgba(239,68,68,0.15)',
+                                      color: '#f87171',
+                                    }
+                                  : {
+                                      background: 'rgba(16,185,129,0.15)',
+                                      color: '#34d399',
+                                    }),
                               }}
                             >
-                              ₹{amt.toLocaleString()}
+                              {isSender ? '↑ Sent' : '↓ Received'}
                             </span>
-                          </div>
-                          <div
-                            style={{
-                              background: 'rgba(255,255,255,0.05)',
-                              borderRadius: '4px',
-                              height: '6px',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: `${pct}%`,
-                                height: '100%',
-                                background:
-                                  'linear-gradient(90deg,#f59e0b,#d97706)',
-                                borderRadius: '4px',
-                                transition: 'width 0.3s',
-                              }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-              </div>
-
-              {/* Summary Highlights */}
-              <div style={s.card}>
-                <h3 style={{ ...s.cardTitle, marginBottom: '16px' }}>
-                  Summary Highlights
-                </h3>
-                {[
-                  {
-                    label: '🏆 Top Expense Category',
-                    val: topCategory
-                      ? `${topCategory[0]} (₹${topCategory[1].toLocaleString()})`
-                      : 'N/A',
-                    color: '#f87171',
-                  },
-                  {
-                    label: '💰 Savings Rate',
-                    val: `${savings}%`,
-                    color: parseFloat(savings) >= 20 ? '#10b981' : '#f59e0b',
-                  },
-                  {
-                    label: '📊 Total Records',
-                    val: records.length.toString(),
-                    color: '#818cf8',
-                  },
-                  {
-                    label: '📈 Income Entries',
-                    val: records
-                      .filter((r) => r.type === 'INCOME')
-                      .length.toString(),
-                    color: '#34d399',
-                  },
-                  {
-                    label: '📉 Expense Entries',
-                    val: records
-                      .filter((r) => r.type === 'EXPENSE')
-                      .length.toString(),
-                    color: '#f87171',
-                  },
-                  {
-                    label: '⚡ Avg Transaction',
-                    val: records.length
-                      ? `₹${Math.round(records.reduce((s, r) => s + r.amount, 0) / records.length).toLocaleString()}`
-                      : '₹0',
-                    color: '#f59e0b',
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      padding: '10px 0',
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    }}
-                  >
-                    <span style={{ color: '#94a3b8', fontSize: '14px' }}>
-                      {item.label}
-                    </span>
-                    <span
-                      style={{
-                        color: item.color,
-                        fontWeight: 700,
-                        fontSize: '14px',
-                      }}
-                    >
-                      {item.val}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Monthly Trend Table */}
-              <div style={{ ...s.card, gridColumn: '1 / -1' }}>
-                <h3 style={{ ...s.cardTitle, marginBottom: '16px' }}>
-                  Trend Table ({trendPeriod})
-                </h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      {['Period', 'Income', 'Expense', 'Net', 'Savings %'].map(
-                        (h) => (
-                          <th key={h} style={s.th}>
-                            {h}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trendEntries.map(([key, val]) => {
-                      const net = val.income - val.expense
-                      const savePct =
-                        val.income > 0
-                          ? ((net / val.income) * 100).toFixed(1)
-                          : '0'
-                      return (
-                        <tr
-                          key={key}
-                          style={{
-                            borderBottom: '1px solid rgba(255,255,255,0.04)',
-                          }}
-                        >
-                          <td style={s.td}>{key}</td>
-                          <td
-                            style={{
-                              ...s.td,
-                              color: '#10b981',
-                              fontWeight: 600,
-                            }}
-                          >
-                            ₹{val.income.toLocaleString()}
+                          </td>
+                          <td style={S.td}>
+                            {isSender ? t.to.name : t.from.name}
+                            <br />
+                            <span
+                              style={{ color: '#64748b', fontSize: '12px' }}
+                            >
+                              {isSender ? t.to.email : t.from.email}
+                            </span>
                           </td>
                           <td
                             style={{
-                              ...s.td,
-                              color: '#ef4444',
+                              ...S.td,
+                              color: isSender ? '#f87171' : '#34d399',
                               fontWeight: 600,
                             }}
                           >
-                            ₹{val.expense.toLocaleString()}
+                            {isSender ? '-' : '+'}₹
+                            {t.amount.toLocaleString('en-IN')}
                           </td>
-                          <td
-                            style={{
-                              ...s.td,
-                              color: net >= 0 ? '#6366f1' : '#ef4444',
-                              fontWeight: 600,
-                            }}
-                          >
-                            ₹{net.toLocaleString()}
-                          </td>
-                          <td
-                            style={{
-                              ...s.td,
-                              color:
-                                parseFloat(savePct) >= 20
-                                  ? '#10b981'
-                                  : '#f59e0b',
-                            }}
-                          >
-                            {savePct}%
+                          <td style={S.td}>{t.notes || '—'}</td>
+                          <td style={S.td}>
+                            {new Date(t.createdAt).toLocaleString()}
                           </td>
                         </tr>
                       )
                     })}
+                    {transfers.length === 0 && (
+                      <tr>
+                        <td
+                          style={{
+                            ...S.td,
+                            textAlign: 'center',
+                            color: '#64748b',
+                          }}
+                          colSpan={5}
+                        >
+                          No transfers yet
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
-          </>
+          </div>
         )}
-      </div>
 
-      {/* ADD RECORD MODAL */}
-      {addOpen && (
-        <div style={s.modalOverlay} onClick={() => setAddOpen(false)}>
-          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+        {tab === 'export' && (
+          <div style={S.card}>
+            <h2 style={S.h2}>Export Records</h2>
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '16px',
+                maxWidth: '600px',
               }}
             >
-              <h2
-                style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700 }}
-              >
-                Add Transaction
-              </h2>
-              <button
-                onClick={() => setAddOpen(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            {formError && (
-              <div
-                style={{
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.3)',
-                  color: '#f87171',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  marginBottom: '16px',
-                }}
-              >
-                {formError}
-              </div>
-            )}
-            {[
-              { label: 'Amount', key: 'amount', type: 'number', ph: '5000' },
-              {
-                label: 'Category',
-                key: 'category',
-                type: 'text',
-                ph: 'Food, Salary, etc.',
-              },
-              { label: 'Date', key: 'date', type: 'date', ph: '' },
-              {
-                label: 'Notes',
-                key: 'notes',
-                type: 'text',
-                ph: 'Optional note',
-              },
-            ].map((f) => (
-              <div key={f.key} style={{ marginBottom: '14px' }}>
-                <label style={s.filterLabel}>{f.label}</label>
-                <input
-                  type={f.type}
-                  value={form[f.key as keyof typeof form]}
-                  placeholder={f.ph}
+              <div>
+                <label style={S.label}>Format</label>
+                <select
+                  style={S.input}
+                  value={expFormat}
                   onChange={(e) =>
-                    setForm((prev) => ({ ...prev, [f.key]: e.target.value }))
+                    setExpFormat(e.target.value as 'csv' | 'json')
                   }
-                  style={{
-                    ...s.input,
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    marginTop: '6px',
-                  }}
+                >
+                  <option value="csv">CSV</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+              <div>
+                <label style={S.label}>Type Filter</label>
+                <select
+                  style={S.input}
+                  value={expType}
+                  onChange={(e) => setExpType(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="INCOME">INCOME</option>
+                  <option value="EXPENSE">EXPENSE</option>
+                </select>
+              </div>
+              <div>
+                <label style={S.label}>Start Date</label>
+                <input
+                  style={S.input}
+                  type="date"
+                  value={expStart}
+                  onChange={(e) => setExpStart(e.target.value)}
                 />
               </div>
-            ))}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={s.filterLabel}>Type</label>
-              <select
-                value={form.type}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, type: e.target.value }))
-                }
-                style={{ ...s.select, width: '100%', marginTop: '6px' }}
-              >
-                <option value="EXPENSE">Expense</option>
-                <option value="INCOME">Income</option>
-              </select>
+              <div>
+                <label style={S.label}>End Date</label>
+                <input
+                  style={S.input}
+                  type="date"
+                  value={expEnd}
+                  onChange={(e) => setExpEnd(e.target.value)}
+                />
+              </div>
             </div>
+            {expMsg && (
+              <div style={{ ...S.success, marginTop: '16px' }}>{expMsg}</div>
+            )}
             <button
-              onClick={handleAddRecord}
-              disabled={formLoading}
-              style={{ ...s.addBtn, width: '100%', padding: '12px' }}
+              style={{ ...S.btnGreen, marginTop: '20px' }}
+              onClick={handleExport}
             >
-              {formLoading ? 'Saving...' : 'Add Transaction'}
+              📥 Export {expFormat.toUpperCase()}
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
-}
-
-function analystStyles() {
-  return {
-    page: {
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0f1e 0%, #111827 100%)',
-      fontFamily: 'system-ui, sans-serif',
-    } as React.CSSProperties,
-    nav: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '16px 32px',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      background: 'rgba(255,255,255,0.02)',
-      backdropFilter: 'blur(12px)',
-      position: 'sticky' as const,
-      top: 0,
-      zIndex: 100,
-    },
-    logo: {
-      color: '#f1f5f9',
-      fontSize: '18px',
-      fontWeight: 700,
-    } as React.CSSProperties,
-    roleBadge: {
-      background: 'rgba(245,158,11,0.15)',
-      border: '1px solid rgba(245,158,11,0.3)',
-      borderRadius: '6px',
-      padding: '3px 10px',
-      fontSize: '11px',
-      fontWeight: 700,
-      color: '#fbbf24',
-      letterSpacing: '0.08em',
-    } as React.CSSProperties,
-    tabBtn: (active: boolean) =>
-      ({
-        padding: '7px 16px',
-        background: active ? 'rgba(245,158,11,0.2)' : 'transparent',
-        color: active ? '#fbbf24' : '#64748b',
-        border: active
-          ? '1px solid rgba(245,158,11,0.3)'
-          : '1px solid transparent',
-        borderRadius: '8px',
-        fontSize: '13px',
-        fontWeight: 600,
-        cursor: 'pointer',
-      }) as React.CSSProperties,
-    logoutBtn: {
-      background: 'rgba(239,68,68,0.1)',
-      border: '1px solid rgba(239,68,68,0.2)',
-      color: '#f87171',
-      borderRadius: '8px',
-      padding: '6px 14px',
-      fontSize: '13px',
-      cursor: 'pointer',
-    } as React.CSSProperties,
-    main: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '32px 24px',
-    } as React.CSSProperties,
-    title: {
-      fontSize: '24px',
-      fontWeight: 700,
-      color: '#f1f5f9',
-    } as React.CSSProperties,
-    statsRow: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: '16px',
-      marginBottom: '24px',
-    } as React.CSSProperties,
-    statCard: (color: string) =>
-      ({
-        background: 'rgba(255,255,255,0.03)',
-        border: `1px solid ${color}25`,
-        borderRadius: '14px',
-        padding: '18px 20px',
-      }) as React.CSSProperties,
-    statLabel: {
-      fontSize: '12px',
-      color: '#64748b',
-      fontWeight: 500,
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.06em',
-    } as React.CSSProperties,
-    card: {
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '14px',
-      padding: '20px 24px',
-      marginBottom: '20px',
-    } as React.CSSProperties,
-    cardTitle: {
-      color: '#f1f5f9',
-      fontSize: '15px',
-      fontWeight: 700,
-    } as React.CSSProperties,
-    periodBtn: (active: boolean) =>
-      ({
-        padding: '5px 12px',
-        background: active ? 'rgba(245,158,11,0.2)' : 'transparent',
-        color: active ? '#fbbf24' : '#64748b',
-        border: `1px solid ${active ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)'}`,
-        borderRadius: '6px',
-        fontSize: '12px',
-        cursor: 'pointer',
-        fontWeight: 500,
-      }) as React.CSSProperties,
-    filterBox: {
-      display: 'flex',
-      flexWrap: 'wrap' as const,
-      gap: '12px',
-      alignItems: 'flex-end',
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '14px',
-      padding: '20px',
-      marginBottom: '24px',
-    },
-    filterGroup: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '6px',
-    },
-    filterLabel: {
-      fontSize: '12px',
-      color: '#94a3b8',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    select: {
-      padding: '9px 12px',
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px',
-      color: '#f1f5f9',
-      fontSize: '13px',
-      outline: 'none',
-    } as React.CSSProperties,
-    input: {
-      padding: '9px 12px',
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px',
-      color: '#f1f5f9',
-      fontSize: '13px',
-      outline: 'none',
-    } as React.CSSProperties,
-    filterBtn: {
-      padding: '9px 18px',
-      background: 'linear-gradient(135deg,#f59e0b,#d97706)',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '13px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      alignSelf: 'flex-end',
-    } as React.CSSProperties,
-    resetBtn: {
-      padding: '9px 18px',
-      background: 'rgba(255,255,255,0.05)',
-      color: '#94a3b8',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px',
-      fontSize: '13px',
-      cursor: 'pointer',
-      alignSelf: 'flex-end',
-    } as React.CSSProperties,
-    addBtn: {
-      background: 'linear-gradient(135deg,#f59e0b,#d97706)',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '8px',
-      padding: '9px 18px',
-      fontSize: '13px',
-      fontWeight: 600,
-      cursor: 'pointer',
-    } as React.CSSProperties,
-    tableWrap: {
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '14px',
-      overflow: 'hidden',
-    } as React.CSSProperties,
-    th: {
-      padding: '12px 16px',
-      textAlign: 'left' as const,
-      fontSize: '12px',
-      color: '#64748b',
-      fontWeight: 600,
-      letterSpacing: '0.05em',
-      textTransform: 'uppercase' as const,
-    },
-    td: {
-      padding: '14px 16px',
-      fontSize: '14px',
-      color: '#e2e8f0',
-    } as React.CSSProperties,
-    categoryTag: {
-      background: 'rgba(245,158,11,0.15)',
-      color: '#fbbf24',
-      padding: '3px 10px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    typeBadge: (type: string) =>
-      ({
-        background:
-          type === 'INCOME' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.1)',
-        color: type === 'INCOME' ? '#34d399' : '#f87171',
-        padding: '3px 10px',
-        borderRadius: '20px',
-        fontSize: '12px',
-        fontWeight: 600,
-      }) as React.CSSProperties,
-    editBtn: {
-      background: 'rgba(245,158,11,0.15)',
-      color: '#fbbf24',
-      border: '1px solid rgba(245,158,11,0.2)',
-      borderRadius: '6px',
-      padding: '5px 12px',
-      fontSize: '12px',
-      cursor: 'pointer',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    modalOverlay: {
-      position: 'fixed' as const,
-      inset: 0,
-      background: 'rgba(0,0,0,0.7)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-    },
-    modal: {
-      background: '#111827',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '16px',
-      padding: '28px',
-      width: '100%',
-      maxWidth: '420px',
-    } as React.CSSProperties,
-  }
 }

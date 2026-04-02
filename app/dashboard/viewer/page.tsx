@@ -1,8 +1,390 @@
-'use client'
-import { useEffect, useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+// 'use client'
+// import { useState, useEffect, useCallback } from 'react'
+// import { useRouter } from 'next/navigation'
 
-interface FinRecord {
+// type Tab = 'records' | 'transfers'
+
+// interface FinancialRecord {
+//   id: string
+//   amount: number
+//   type: 'INCOME' | 'EXPENSE'
+//   category: string
+//   date: string
+//   notes?: string
+// }
+
+// interface Transfer {
+//   id: string
+//   amount: number
+//   notes?: string
+//   createdAt: string
+//   from: { id: string; name: string; email: string }
+//   to: { id: string; name: string; email: string }
+// }
+
+// type StyleMap = { [key: string]: React.CSSProperties }
+
+// const S: StyleMap = {
+//   page: {
+//     minHeight: '100vh',
+//     background: '#0a0f1e',
+//     color: '#e2e8f0',
+//     fontFamily: "'DM Sans', sans-serif",
+//   },
+//   sidebar: {
+//     position: 'fixed',
+//     left: 0,
+//     top: 0,
+//     bottom: 0,
+//     width: '220px',
+//     background: 'rgba(255,255,255,0.03)',
+//     borderRight: '1px solid rgba(255,255,255,0.07)',
+//     padding: '24px 0',
+//     display: 'flex',
+//     flexDirection: 'column',
+//     zIndex: 10,
+//   },
+//   logo: {
+//     padding: '0 20px 24px',
+//     borderBottom: '1px solid rgba(255,255,255,0.07)',
+//     marginBottom: '8px',
+//   },
+//   logoText: { fontSize: '16px', fontWeight: 700, color: '#f1f5f9' },
+//   logoBadge: {
+//     fontSize: '10px',
+//     background: 'rgba(148,163,184,0.15)',
+//     border: '1px solid rgba(148,163,184,0.3)',
+//     color: '#94a3b8',
+//     padding: '2px 8px',
+//     borderRadius: '4px',
+//     fontWeight: 600,
+//     letterSpacing: '0.06em',
+//   },
+//   navBtn: {
+//     display: 'flex',
+//     alignItems: 'center',
+//     gap: '10px',
+//     padding: '10px 20px',
+//     background: 'transparent',
+//     border: 'none',
+//     color: '#94a3b8',
+//     fontSize: '14px',
+//     fontWeight: 500,
+//     cursor: 'pointer',
+//     textAlign: 'left',
+//     width: '100%',
+//   },
+//   navBtnActive: {
+//     color: '#f1f5f9',
+//     background: 'rgba(99,102,241,0.12)',
+//     borderLeft: '3px solid #6366f1',
+//   },
+//   main: { marginLeft: '220px', padding: '32px' },
+//   card: {
+//     background: 'rgba(255,255,255,0.04)',
+//     border: '1px solid rgba(255,255,255,0.08)',
+//     borderRadius: '16px',
+//     padding: '24px',
+//   },
+//   h2: {
+//     fontSize: '20px',
+//     fontWeight: 700,
+//     color: '#f1f5f9',
+//     marginBottom: '20px',
+//   },
+//   table: { width: '100%', borderCollapse: 'collapse' },
+//   th: {
+//     padding: '10px 14px',
+//     textAlign: 'left',
+//     color: '#64748b',
+//     fontSize: '12px',
+//     fontWeight: 600,
+//     borderBottom: '1px solid rgba(255,255,255,0.07)',
+//     letterSpacing: '0.04em',
+//   },
+//   td: {
+//     padding: '12px 14px',
+//     borderBottom: '1px solid rgba(255,255,255,0.05)',
+//     color: '#cbd5e1',
+//     verticalAlign: 'top',
+//   },
+//   badge: {
+//     display: 'inline-block',
+//     padding: '2px 8px',
+//     borderRadius: '4px',
+//     fontSize: '11px',
+//     fontWeight: 600,
+//     letterSpacing: '0.04em',
+//   },
+//   infoBox: {
+//     background: 'rgba(99,102,241,0.08)',
+//     border: '1px solid rgba(99,102,241,0.2)',
+//     borderRadius: '10px',
+//     padding: '12px 16px',
+//     fontSize: '13px',
+//     color: '#818cf8',
+//     marginBottom: '20px',
+//   },
+// }
+
+// export default function ViewerDashboard() {
+//   const router = useRouter()
+//   const [tab, setTab] = useState<Tab>('records')
+//   const [name, setName] = useState('')
+//   const [userId, setUserId] = useState('')
+//   const [balance, setBalance] = useState(0)
+//   const [records, setRecords] = useState<FinancialRecord[]>([])
+//   const [transfers, setTransfers] = useState<Transfer[]>([])
+
+//   const getToken = () => localStorage.getItem('token') || ''
+//   const hdrs = (): { [key: string]: string } => ({
+//     'Content-Type': 'application/json',
+//     Authorization: `Bearer ${getToken()}`,
+//   })
+
+//   const fetchBalance = useCallback(async () => {
+//     const res = await fetch('/api/auth/me', { headers: hdrs() })
+//     const json = await res.json()
+//     if (json.success) setBalance(json.data.balance ?? 0)
+//   }, [])
+
+//   const fetchRecords = useCallback(async () => {
+//     const res = await fetch('/api/records', { headers: hdrs() })
+//     const json = await res.json()
+//     if (json.success) setRecords(json.data)
+//   }, [])
+
+//   const fetchTransfers = useCallback(async () => {
+//     const res = await fetch('/api/transfers', { headers: hdrs() })
+//     const json = await res.json()
+//     if (json.success) setTransfers(json.data)
+//   }, [])
+
+//   useEffect(() => {
+//     setName(localStorage.getItem('name') || '')
+//     setUserId(localStorage.getItem('userId') || '')
+//     fetchBalance()
+//   }, [fetchBalance])
+
+//   useEffect(() => {
+//     if (tab === 'records') fetchRecords()
+//   }, [tab, fetchRecords])
+//   useEffect(() => {
+//     if (tab === 'transfers') fetchTransfers()
+//   }, [tab, fetchTransfers])
+
+//   function logout() {
+//     localStorage.clear()
+//     router.push('/login')
+//   }
+
+//   const typeColor = (t: string): React.CSSProperties =>
+//     t === 'INCOME'
+//       ? { background: 'rgba(16,185,129,0.15)', color: '#34d399' }
+//       : { background: 'rgba(239,68,68,0.15)', color: '#f87171' }
+
+//   return (
+//     <div style={S.page}>
+//       <div style={S.sidebar}>
+//         <div style={S.logo}>
+//           <div
+//             style={{
+//               display: 'flex',
+//               alignItems: 'center',
+//               justifyContent: 'space-between',
+//             }}
+//           >
+//             <span style={S.logoText}>FinanceApp</span>
+//             <span style={S.logoBadge}>VIEWER</span>
+//           </div>
+//           <div style={{ marginTop: '8px', fontSize: '13px', color: '#64748b' }}>
+//             {name}
+//           </div>
+//           <div
+//             style={{
+//               marginTop: '4px',
+//               fontSize: '13px',
+//               color: '#34d399',
+//               fontWeight: 600,
+//             }}
+//           >
+//             ₹{balance.toLocaleString('en-IN')}
+//           </div>
+//         </div>
+//         {(['records', 'transfers'] as Tab[]).map((id) => (
+//           <button
+//             key={id}
+//             style={{ ...S.navBtn, ...(tab === id ? S.navBtnActive : {}) }}
+//             onClick={() => setTab(id)}
+//           >
+//             <span>{id === 'records' ? '📋' : '💸'}</span>{' '}
+//             {id.charAt(0).toUpperCase() + id.slice(1)}
+//           </button>
+//         ))}
+//         <div style={{ flex: 1 }} />
+//         <button style={{ ...S.navBtn, color: '#f87171' }} onClick={logout}>
+//           🚪 Logout
+//         </button>
+//       </div>
+
+//       <div style={{ marginLeft: '220px', padding: '32px' }}>
+//         {tab === 'records' && (
+//           <div style={S.card}>
+//             <h2 style={S.h2}>Your Records</h2>
+//             <div style={S.infoBox}>
+//               👁️ You have view-only access. Contact an Admin or Analyst to add
+//               records.
+//             </div>
+//             <div style={{ overflowX: 'auto' }}>
+//               <table style={S.table}>
+//                 <thead>
+//                   <tr>
+//                     {['Category', 'Type', 'Amount', 'Date', 'Notes'].map(
+//                       (h) => (
+//                         <th key={h} style={S.th}>
+//                           {h}
+//                         </th>
+//                       ),
+//                     )}
+//                   </tr>
+//                 </thead>
+//                 <tbody>
+//                   {records.map((r) => (
+//                     <tr key={r.id}>
+//                       <td style={S.td}>{r.category}</td>
+//                       <td style={S.td}>
+//                         <span style={{ ...S.badge, ...typeColor(r.type) }}>
+//                           {r.type}
+//                         </span>
+//                       </td>
+//                       <td style={S.td}>₹{r.amount.toLocaleString('en-IN')}</td>
+//                       <td style={S.td}>
+//                         {new Date(r.date).toLocaleDateString()}
+//                       </td>
+//                       <td style={S.td}>{r.notes || '—'}</td>
+//                     </tr>
+//                   ))}
+//                   {records.length === 0 && (
+//                     <tr>
+//                       <td
+//                         style={{
+//                           ...S.td,
+//                           textAlign: 'center',
+//                           color: '#64748b',
+//                         }}
+//                         colSpan={5}
+//                       >
+//                         No records found
+//                       </td>
+//                     </tr>
+//                   )}
+//                 </tbody>
+//               </table>
+//             </div>
+//           </div>
+//         )}
+
+//         {tab === 'transfers' && (
+//           <div style={S.card}>
+//             <h2 style={S.h2}>Your Transfer History</h2>
+//             <div style={S.infoBox}>
+//               💡 Viewers can see transfers involving their account but cannot
+//               send money.
+//             </div>
+//             <div style={{ overflowX: 'auto' }}>
+//               <table style={S.table}>
+//                 <thead>
+//                   <tr>
+//                     {[
+//                       'Direction',
+//                       'Other Party',
+//                       'Amount',
+//                       'Notes',
+//                       'Date',
+//                     ].map((h) => (
+//                       <th key={h} style={S.th}>
+//                         {h}
+//                       </th>
+//                     ))}
+//                   </tr>
+//                 </thead>
+//                 <tbody>
+//                   {transfers.map((t) => {
+//                     const isSender = t.from.id === userId
+//                     return (
+//                       <tr key={t.id}>
+//                         <td style={S.td}>
+//                           <span
+//                             style={{
+//                               ...S.badge,
+//                               ...(isSender
+//                                 ? {
+//                                     background: 'rgba(239,68,68,0.15)',
+//                                     color: '#f87171',
+//                                   }
+//                                 : {
+//                                     background: 'rgba(16,185,129,0.15)',
+//                                     color: '#34d399',
+//                                   }),
+//                             }}
+//                           >
+//                             {isSender ? '↑ Sent' : '↓ Received'}
+//                           </span>
+//                         </td>
+//                         <td style={S.td}>
+//                           {isSender ? t.to.name : t.from.name}
+//                           <br />
+//                           <span style={{ color: '#64748b', fontSize: '12px' }}>
+//                             {isSender ? t.to.email : t.from.email}
+//                           </span>
+//                         </td>
+//                         <td
+//                           style={{
+//                             ...S.td,
+//                             color: isSender ? '#f87171' : '#34d399',
+//                             fontWeight: 600,
+//                           }}
+//                         >
+//                           {isSender ? '-' : '+'}₹
+//                           {t.amount.toLocaleString('en-IN')}
+//                         </td>
+//                         <td style={S.td}>{t.notes || '—'}</td>
+//                         <td style={S.td}>
+//                           {new Date(t.createdAt).toLocaleString()}
+//                         </td>
+//                       </tr>
+//                     )
+//                   })}
+//                   {transfers.length === 0 && (
+//                     <tr>
+//                       <td
+//                         style={{
+//                           ...S.td,
+//                           textAlign: 'center',
+//                           color: '#64748b',
+//                         }}
+//                         colSpan={5}
+//                       >
+//                         No transfers found
+//                       </td>
+//                     </tr>
+//                   )}
+//                 </tbody>
+//               </table>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   )
+// }
+'use client'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+
+type Tab = 'records' | 'transfers'
+
+interface FinancialRecord {
   id: string
   amount: number
   type: 'INCOME' | 'EXPENSE'
@@ -11,581 +393,506 @@ interface FinRecord {
   notes?: string
 }
 
-function LoadingScreen() {
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#0a0f1e',
-      }}
-    >
-      <div style={{ color: '#6366f1', fontSize: '16px' }}>Loading...</div>
-    </div>
-  )
+interface Transfer {
+  id: string
+  amount: number
+  notes?: string
+  createdAt: string
+  from: { id: string; name: string; email: string }
+  to: { id: string; name: string; email: string }
+}
+
+type StyleMap = { [key: string]: React.CSSProperties }
+
+const S: StyleMap = {
+  page: {
+    minHeight: '100vh',
+    background: '#0a0f1e',
+    color: '#e2e8f0',
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  sidebar: {
+    position: 'fixed',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: '220px',
+    background: 'rgba(255,255,255,0.03)',
+    borderRight: '1px solid rgba(255,255,255,0.07)',
+    padding: '24px 0',
+    display: 'flex',
+    flexDirection: 'column',
+    zIndex: 10,
+  },
+  logo: {
+    padding: '0 20px 24px',
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    marginBottom: '8px',
+  },
+  logoText: { fontSize: '16px', fontWeight: 700, color: '#f1f5f9' },
+  logoBadge: {
+    fontSize: '10px',
+    background: 'rgba(148,163,184,0.15)',
+    border: '1px solid rgba(148,163,184,0.3)',
+    color: '#94a3b8',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontWeight: 600,
+    letterSpacing: '0.06em',
+  },
+  navBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 20px',
+    background: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    textAlign: 'left',
+    width: '100%',
+  },
+  navBtnActive: {
+    color: '#f1f5f9',
+    background: 'rgba(99,102,241,0.12)',
+    borderLeft: '3px solid #6366f1',
+  },
+  card: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '16px',
+    padding: '24px',
+  },
+  h2: {
+    fontSize: '20px',
+    fontWeight: 700,
+    color: '#f1f5f9',
+    marginBottom: '20px',
+  },
+  table: { width: '100%', borderCollapse: 'collapse' },
+  th: {
+    padding: '10px 14px',
+    textAlign: 'left',
+    color: '#64748b',
+    fontSize: '12px',
+    fontWeight: 600,
+    borderBottom: '1px solid rgba(255,255,255,0.07)',
+    letterSpacing: '0.04em',
+  },
+  td: {
+    padding: '12px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    color: '#cbd5e1',
+    verticalAlign: 'top',
+  },
+  badge: {
+    display: 'inline-block',
+    padding: '2px 8px',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+  },
+  infoBox: {
+    background: 'rgba(99,102,241,0.08)',
+    border: '1px solid rgba(99,102,241,0.2)',
+    borderRadius: '10px',
+    padding: '12px 16px',
+    fontSize: '13px',
+    color: '#818cf8',
+    marginBottom: '20px',
+  },
 }
 
 export default function ViewerDashboard() {
-  const { user, loading: authLoading, logout } = useAuth('VIEWER')
-  const [records, setRecords] = useState<FinRecord[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filterType, setFilterType] = useState('')
-  const [filterCategory, setFilterCategory] = useState('')
-  const [filterStart, setFilterStart] = useState('')
-  const [filterEnd, setFilterEnd] = useState('')
-  const [selected, setSelected] = useState<FinRecord | null>(null)
+  const router = useRouter()
+  const [tab, setTab] = useState<Tab>('records')
+  const [name, setName] = useState('')
+  const [userId, setUserId] = useState('')
+  const [balance, setBalance] = useState(0)
+  const [records, setRecords] = useState<FinancialRecord[]>([])
+  const [transfers, setTransfers] = useState<Transfer[]>([])
 
-  useEffect(() => {
-    if (user) fetchRecords()
-  }, [user])
+  const getToken = () => localStorage.getItem('token') || ''
+  const hdrs = (): { [key: string]: string } => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${getToken()}`,
+  })
 
-  async function fetchRecords(type = '', category = '', start = '', end = '') {
-    setLoading(true)
-    const params = new URLSearchParams()
-    if (type) params.set('type', type)
-    if (category) params.set('category', category)
-    if (start) params.set('startDate', start)
-    if (end) params.set('endDate', end)
-    const res = await fetch(`/api/records?${params}`)
+  const fetchBalance = useCallback(async () => {
+    const res = await fetch('/api/auth/me', { headers: hdrs() })
+    const json = await res.json()
+    if (json.success) setBalance(json.data.balance ?? 0)
+  }, [])
+
+  const fetchRecords = useCallback(async () => {
+    const res = await fetch('/api/records', { headers: hdrs() })
     const json = await res.json()
     if (json.success) setRecords(json.data)
-    setLoading(false)
+  }, [])
+
+  const fetchTransfers = useCallback(async () => {
+    const res = await fetch('/api/transfers', { headers: hdrs() })
+    const json = await res.json()
+    if (json.success) setTransfers(json.data)
+  }, [])
+
+  useEffect(() => {
+    const storedName = localStorage.getItem('name') || ''
+    const storedId = localStorage.getItem('userId') || ''
+    setName(storedName)
+    setUserId(storedId)
+    fetchBalance()
+  }, [fetchBalance])
+
+  useEffect(() => {
+    if (tab === 'records') fetchRecords()
+  }, [tab, fetchRecords])
+  useEffect(() => {
+    if (tab === 'transfers') fetchTransfers()
+  }, [tab, fetchTransfers])
+
+  function logout() {
+    localStorage.clear()
+    router.push('/login')
   }
 
-  const totalIncome = records
-    .filter((r) => r.type === 'INCOME')
-    .reduce((s, r) => s + r.amount, 0)
-  const totalExpense = records
-    .filter((r) => r.type === 'EXPENSE')
-    .reduce((s, r) => s + r.amount, 0)
-  const net = totalIncome - totalExpense
+  const typeColor = (t: string): React.CSSProperties =>
+    t === 'INCOME'
+      ? { background: 'rgba(16,185,129,0.15)', color: '#34d399' }
+      : { background: 'rgba(239,68,68,0.15)', color: '#f87171' }
 
-  if (authLoading) return <LoadingScreen />
-
-  const s = pageStyles()
+  // Stats for transfer tab
+  const totalReceived = transfers
+    .filter((t) => t.to.id === userId)
+    .reduce((s, t) => s + t.amount, 0)
 
   return (
-    <div style={s.page}>
-      {/* NAV */}
-      <nav style={s.nav}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={s.logo}>💰 PayKart</span>
-          <span
-            style={s.roleBadge(
-              '#34d399',
-              'rgba(16,185,129,0.15)',
-              'rgba(16,185,129,0.25)',
-            )}
-          >
-            VIEWER
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ color: '#94a3b8', fontSize: '14px' }}>
-            {user?.name}
-          </span>
-          <button onClick={logout} style={s.logoutBtn}>
-            Logout
-          </button>
-        </div>
-      </nav>
-
-      <div style={s.main}>
-        <div style={{ marginBottom: '28px' }}>
-          <h1 style={s.title}>My Financial Records</h1>
-          <p style={{ color: '#64748b', fontSize: '15px', marginTop: '4px' }}>
-            Read-only view of your financial data
-          </p>
-        </div>
-
-        {/* STATS */}
-        <div style={s.statsRow}>
-          {[
-            {
-              label: 'Total Income',
-              val: `₹${totalIncome.toLocaleString()}`,
-              color: '#10b981',
-              icon: '↑',
-            },
-            {
-              label: 'Total Expenses',
-              val: `₹${totalExpense.toLocaleString()}`,
-              color: '#ef4444',
-              icon: '↓',
-            },
-            {
-              label: 'Net Balance',
-              val: `₹${net.toLocaleString()}`,
-              color: net >= 0 ? '#6366f1' : '#ef4444',
-              icon: '=',
-            },
-          ].map((c) => (
-            <div key={c.label} style={s.statCard(c.color)}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                }}
-              >
-                <p style={s.statLabel}>{c.label}</p>
-                <span
-                  style={{ fontSize: '20px', color: c.color, opacity: 0.7 }}
-                >
-                  {c.icon}
-                </span>
-              </div>
-              <p
-                style={{
-                  fontSize: '26px',
-                  fontWeight: 700,
-                  color: c.color,
-                  marginTop: '8px',
-                }}
-              >
-                {c.val}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* FILTERS */}
-        <div style={s.filterBox}>
-          <div style={s.filterGroup}>
-            <label style={s.filterLabel}>Type</label>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              style={s.select}
-            >
-              <option value="">All Types</option>
-              <option value="INCOME">Income</option>
-              <option value="EXPENSE">Expense</option>
-            </select>
-          </div>
-          <div style={s.filterGroup}>
-            <label style={s.filterLabel}>Category</label>
-            <input
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              placeholder="e.g. Food"
-              style={s.input}
-            />
-          </div>
-          <div style={s.filterGroup}>
-            <label style={s.filterLabel}>From</label>
-            <input
-              type="date"
-              value={filterStart}
-              onChange={(e) => setFilterStart(e.target.value)}
-              style={s.input}
-            />
-          </div>
-          <div style={s.filterGroup}>
-            <label style={s.filterLabel}>To</label>
-            <input
-              type="date"
-              value={filterEnd}
-              onChange={(e) => setFilterEnd(e.target.value)}
-              style={s.input}
-            />
-          </div>
-          <button
-            onClick={() =>
-              fetchRecords(filterType, filterCategory, filterStart, filterEnd)
-            }
-            style={s.filterBtn}
-          >
-            Apply
-          </button>
-          <button
-            onClick={() => {
-              setFilterType('')
-              setFilterCategory('')
-              setFilterStart('')
-              setFilterEnd('')
-              fetchRecords()
-            }}
-            style={s.resetBtn}
-          >
-            Reset
-          </button>
-        </div>
-
-        {/* TABLE */}
-        <div style={s.tableWrap}>
+    <div style={S.page}>
+      <div style={S.sidebar}>
+        <div style={S.logo}>
           <div
             style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
+              justifyContent: 'space-between',
             }}
           >
-            <span style={{ color: '#f1f5f9', fontWeight: 600 }}>
-              Transactions
-            </span>
-            <span style={{ color: '#64748b', fontSize: '13px' }}>
-              {records.length} records
-            </span>
+            <span style={S.logoText}>FinanceApp</span>
+            <span style={S.logoBadge}>VIEWER</span>
           </div>
-          {loading ? (
-            <div
-              style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}
-            >
-              Loading records...
-            </div>
-          ) : records.length === 0 ? (
-            <div
-              style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}
-            >
-              No records found
-            </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  {[
-                    'Date',
-                    'Category',
-                    'Type',
-                    'Amount',
-                    'Notes',
-                    'Details',
-                  ].map((h) => (
-                    <th key={h} style={s.th}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((r, i) => (
-                  <tr
-                    key={r.id}
-                    style={{
-                      background:
-                        i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    }}
-                  >
-                    <td style={s.td}>
-                      {new Date(r.date).toLocaleDateString('en-IN')}
-                    </td>
-                    <td style={s.td}>
-                      <span style={s.categoryTag}>{r.category}</span>
-                    </td>
-                    <td style={s.td}>
-                      <span style={s.typeBadge(r.type)}>{r.type}</span>
-                    </td>
-                    <td
-                      style={{
-                        ...s.td,
-                        fontWeight: 600,
-                        color: r.type === 'INCOME' ? '#10b981' : '#ef4444',
-                      }}
-                    >
-                      {r.type === 'INCOME' ? '+' : '-'}₹
-                      {r.amount.toLocaleString()}
-                    </td>
-                    <td style={{ ...s.td, color: '#64748b', fontSize: '13px' }}>
-                      {r.notes || '—'}
-                    </td>
-                    <td style={s.td}>
-                      <button onClick={() => setSelected(r)} style={s.viewBtn}>
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+          <div style={{ marginTop: '8px', fontSize: '13px', color: '#64748b' }}>
+            {name}
+          </div>
+          <div
+            style={{
+              marginTop: '4px',
+              fontSize: '13px',
+              color: '#34d399',
+              fontWeight: 600,
+            }}
+          >
+            ₹{balance.toLocaleString('en-IN')}
+          </div>
         </div>
+        {(['records', 'transfers'] as Tab[]).map((id) => (
+          <button
+            key={id}
+            style={{ ...S.navBtn, ...(tab === id ? S.navBtnActive : {}) }}
+            onClick={() => setTab(id)}
+          >
+            <span>{id === 'records' ? '📋' : '💸'}</span>{' '}
+            {id.charAt(0).toUpperCase() + id.slice(1)}
+          </button>
+        ))}
+        <div style={{ flex: 1 }} />
+        <button style={{ ...S.navBtn, color: '#f87171' }} onClick={logout}>
+          🚪 Logout
+        </button>
       </div>
 
-      {/* DETAIL MODAL */}
-      {selected && (
-        <div style={s.modalOverlay} onClick={() => setSelected(null)}>
-          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+      <div style={{ marginLeft: '220px', padding: '32px' }}>
+        {tab === 'records' && (
+          <div style={S.card}>
+            <h2 style={S.h2}>Your Records</h2>
+            <div style={S.infoBox}>
+              👁️ You have view-only access. Contact an Admin or Analyst to add
+              records.
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={S.table}>
+                <thead>
+                  <tr>
+                    {['Category', 'Type', 'Amount', 'Date', 'Notes'].map(
+                      (h) => (
+                        <th key={h} style={S.th}>
+                          {h}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((r) => (
+                    <tr key={r.id}>
+                      <td style={S.td}>{r.category}</td>
+                      <td style={S.td}>
+                        <span style={{ ...S.badge, ...typeColor(r.type) }}>
+                          {r.type}
+                        </span>
+                      </td>
+                      <td style={S.td}>₹{r.amount.toLocaleString('en-IN')}</td>
+                      <td style={S.td}>
+                        {new Date(r.date).toLocaleDateString()}
+                      </td>
+                      <td style={S.td}>{r.notes || '—'}</td>
+                    </tr>
+                  ))}
+                  {records.length === 0 && (
+                    <tr>
+                      <td
+                        style={{
+                          ...S.td,
+                          textAlign: 'center',
+                          color: '#64748b',
+                        }}
+                        colSpan={5}
+                      >
+                        No records found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {tab === 'transfers' && (
+          <div>
+            {/* Stats row */}
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '16px',
                 marginBottom: '24px',
               }}
             >
-              <h2
-                style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700 }}
-              >
-                Transaction Details
-              </h2>
-              <button
-                onClick={() => setSelected(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '20px',
-                  cursor: 'pointer',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            {[
-              {
-                label: 'Amount',
-                val: `${selected.type === 'INCOME' ? '+' : '-'}₹${selected.amount.toLocaleString()}`,
-                color: selected.type === 'INCOME' ? '#10b981' : '#ef4444',
-              },
-              { label: 'Type', val: selected.type },
-              { label: 'Category', val: selected.category },
-              {
-                label: 'Date',
-                val: new Date(selected.date).toLocaleDateString('en-IN', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                }),
-              },
-              { label: 'Notes', val: selected.notes || 'No notes' },
-            ].map((item) => (
               <div
-                key={item.label}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '14px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(16,185,129,0.08)',
+                  border: '1px solid rgba(16,185,129,0.2)',
+                  borderRadius: '14px',
+                  padding: '20px 24px',
                 }}
               >
-                <span style={{ color: '#64748b', fontSize: '14px' }}>
-                  {item.label}
-                </span>
-                <span
+                <div
                   style={{
-                    color: item.color || '#f1f5f9',
-                    fontSize: '14px',
+                    fontSize: '12px',
+                    color: '#64748b',
                     fontWeight: 600,
+                    marginBottom: '6px',
+                    letterSpacing: '0.06em',
                   }}
                 >
-                  {item.val}
-                </span>
+                  TOTAL RECEIVED
+                </div>
+                <div
+                  style={{
+                    fontSize: '26px',
+                    fontWeight: 700,
+                    color: '#34d399',
+                  }}
+                >
+                  ₹{totalReceived.toLocaleString('en-IN')}
+                </div>
               </div>
-            ))}
+              <div
+                style={{
+                  background: 'rgba(99,102,241,0.08)',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  borderRadius: '14px',
+                  padding: '20px 24px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    fontWeight: 600,
+                    marginBottom: '6px',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  TRANSACTIONS
+                </div>
+                <div
+                  style={{
+                    fontSize: '26px',
+                    fontWeight: 700,
+                    color: '#818cf8',
+                  }}
+                >
+                  {transfers.length}
+                </div>
+              </div>
+            </div>
+
+            <div style={S.card}>
+              <h2 style={S.h2}>Transfer History</h2>
+              <div style={S.infoBox}>
+                💡 Viewers can receive money. To send money, contact your Admin
+                to upgrade your role.
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={S.table}>
+                  <thead>
+                    <tr>
+                      {['', 'Party', 'Amount', 'Notes', 'Date'].map((h) => (
+                        <th key={h} style={S.th}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transfers.map((t) => {
+                      const isSender = t.from.id === userId
+                      return (
+                        <tr key={t.id}>
+                          <td style={S.td}>
+                            <div
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                background: isSender
+                                  ? 'rgba(239,68,68,0.15)'
+                                  : 'rgba(16,185,129,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '14px',
+                              }}
+                            >
+                              {isSender ? '↑' : '↓'}
+                            </div>
+                          </td>
+                          <td style={S.td}>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: '#f1f5f9',
+                                fontSize: '14px',
+                              }}
+                            >
+                              {isSender ? t.to.name : t.from.name}
+                            </div>
+                            <div
+                              style={{
+                                color: '#64748b',
+                                fontSize: '12px',
+                                marginTop: '2px',
+                              }}
+                            >
+                              {isSender ? t.to.email : t.from.email}
+                            </div>
+                            <div
+                              style={{
+                                display: 'inline-block',
+                                marginTop: '4px',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                letterSpacing: '0.06em',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: isSender
+                                  ? 'rgba(239,68,68,0.15)'
+                                  : 'rgba(16,185,129,0.15)',
+                                color: isSender ? '#f87171' : '#34d399',
+                              }}
+                            >
+                              {isSender ? 'SENT' : 'RECEIVED'}
+                            </div>
+                          </td>
+                          <td
+                            style={{
+                              ...S.td,
+                              color: isSender ? '#f87171' : '#34d399',
+                              fontWeight: 700,
+                              fontSize: '16px',
+                            }}
+                          >
+                            {isSender ? '−' : '+'}₹
+                            {t.amount.toLocaleString('en-IN')}
+                          </td>
+                          <td
+                            style={{
+                              ...S.td,
+                              color: '#94a3b8',
+                              fontSize: '13px',
+                            }}
+                          >
+                            {t.notes || '—'}
+                          </td>
+                          <td
+                            style={{
+                              ...S.td,
+                              color: '#64748b',
+                              fontSize: '12px',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <div>
+                              {new Date(t.createdAt).toLocaleDateString(
+                                'en-IN',
+                                {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric',
+                                },
+                              )}
+                            </div>
+                            <div style={{ marginTop: '2px' }}>
+                              {new Date(t.createdAt).toLocaleTimeString(
+                                'en-IN',
+                                { hour: '2-digit', minute: '2-digit' },
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {transfers.length === 0 && (
+                      <tr>
+                        <td
+                          style={{
+                            ...S.td,
+                            textAlign: 'center',
+                            color: '#64748b',
+                            padding: '32px',
+                          }}
+                          colSpan={5}
+                        >
+                          <div
+                            style={{ fontSize: '32px', marginBottom: '8px' }}
+                          >
+                            💸
+                          </div>
+                          <div>No transfers yet</div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
-}
-
-function pageStyles() {
-  return {
-    page: {
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0f1e 0%, #111827 100%)',
-      fontFamily: 'system-ui, sans-serif',
-    } as React.CSSProperties,
-    nav: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '16px 32px',
-      borderBottom: '1px solid rgba(255,255,255,0.06)',
-      background: 'rgba(255,255,255,0.02)',
-      backdropFilter: 'blur(12px)',
-      position: 'sticky' as const,
-      top: 0,
-      zIndex: 100,
-    },
-    logo: {
-      color: '#f1f5f9',
-      fontSize: '18px',
-      fontWeight: 700,
-    } as React.CSSProperties,
-    roleBadge: (color: string, bg: string, border: string) =>
-      ({
-        background: bg,
-        border: `1px solid ${border}`,
-        borderRadius: '6px',
-        padding: '3px 10px',
-        fontSize: '11px',
-        fontWeight: 700,
-        color,
-        letterSpacing: '0.08em',
-      }) as React.CSSProperties,
-    logoutBtn: {
-      background: 'rgba(239,68,68,0.1)',
-      border: '1px solid rgba(239,68,68,0.2)',
-      color: '#f87171',
-      borderRadius: '8px',
-      padding: '6px 14px',
-      fontSize: '13px',
-      cursor: 'pointer',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    main: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '32px 24px',
-    } as React.CSSProperties,
-    title: {
-      fontSize: '24px',
-      fontWeight: 700,
-      color: '#f1f5f9',
-    } as React.CSSProperties,
-    statsRow: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '16px',
-      marginBottom: '24px',
-    } as React.CSSProperties,
-    statCard: (color: string) =>
-      ({
-        background: 'rgba(255,255,255,0.03)',
-        border: `1px solid ${color}25`,
-        borderRadius: '14px',
-        padding: '20px 24px',
-      }) as React.CSSProperties,
-    statLabel: {
-      fontSize: '12px',
-      color: '#64748b',
-      fontWeight: 500,
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.06em',
-    } as React.CSSProperties,
-    filterBox: {
-      display: 'flex',
-      flexWrap: 'wrap' as const,
-      gap: '12px',
-      alignItems: 'flex-end',
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '14px',
-      padding: '20px',
-      marginBottom: '24px',
-    },
-    filterGroup: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '6px',
-    },
-    filterLabel: {
-      fontSize: '12px',
-      color: '#94a3b8',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    select: {
-      padding: '9px 12px',
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px',
-      color: '#f1f5f9',
-      fontSize: '13px',
-      outline: 'none',
-    } as React.CSSProperties,
-    input: {
-      padding: '9px 12px',
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px',
-      color: '#f1f5f9',
-      fontSize: '13px',
-      outline: 'none',
-    } as React.CSSProperties,
-    filterBtn: {
-      padding: '9px 18px',
-      background: 'linear-gradient(135deg,#6366f1,#4f46e5)',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '13px',
-      fontWeight: 600,
-      cursor: 'pointer',
-      alignSelf: 'flex-end',
-    } as React.CSSProperties,
-    resetBtn: {
-      padding: '9px 18px',
-      background: 'rgba(255,255,255,0.05)',
-      color: '#94a3b8',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '8px',
-      fontSize: '13px',
-      cursor: 'pointer',
-      alignSelf: 'flex-end',
-    } as React.CSSProperties,
-    tableWrap: {
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.06)',
-      borderRadius: '14px',
-      overflow: 'hidden',
-    } as React.CSSProperties,
-    th: {
-      padding: '12px 16px',
-      textAlign: 'left' as const,
-      fontSize: '12px',
-      color: '#64748b',
-      fontWeight: 600,
-      letterSpacing: '0.05em',
-      textTransform: 'uppercase' as const,
-    },
-    td: {
-      padding: '14px 16px',
-      fontSize: '14px',
-      color: '#e2e8f0',
-    } as React.CSSProperties,
-    categoryTag: {
-      background: 'rgba(99,102,241,0.15)',
-      color: '#818cf8',
-      padding: '3px 10px',
-      borderRadius: '20px',
-      fontSize: '12px',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    typeBadge: (type: string) =>
-      ({
-        background:
-          type === 'INCOME' ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.1)',
-        color: type === 'INCOME' ? '#34d399' : '#f87171',
-        padding: '3px 10px',
-        borderRadius: '20px',
-        fontSize: '12px',
-        fontWeight: 600,
-      }) as React.CSSProperties,
-    viewBtn: {
-      background: 'rgba(99,102,241,0.15)',
-      color: '#818cf8',
-      border: '1px solid rgba(99,102,241,0.2)',
-      borderRadius: '6px',
-      padding: '5px 12px',
-      fontSize: '12px',
-      cursor: 'pointer',
-      fontWeight: 500,
-    } as React.CSSProperties,
-    modalOverlay: {
-      position: 'fixed' as const,
-      inset: 0,
-      background: 'rgba(0,0,0,0.7)',
-      backdropFilter: 'blur(4px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-    },
-    modal: {
-      background: '#111827',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: '16px',
-      padding: '28px',
-      width: '100%',
-      maxWidth: '420px',
-    } as React.CSSProperties,
-  }
 }
