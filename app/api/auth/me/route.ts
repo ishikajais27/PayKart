@@ -3,7 +3,7 @@ import { authenticate } from '@/middleware/auth.middleware'
 import { prisma } from '@/lib/prisma'
 import { success, error } from '@/lib/response'
 import { TokenPayload } from '@/types'
-import { getUserById } from '@/services/user'
+
 export async function GET(req: NextRequest) {
   try {
     const auth = authenticate(req)

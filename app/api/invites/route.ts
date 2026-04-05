@@ -38,10 +38,14 @@ export async function POST(req: NextRequest) {
     if (denied) return denied
 
     const body = await req.json()
-    const { data, error: parseError } = parseBody(inviteSchema, body)
-    if (parseError) return error(parseError, 400)
+    const parsed = parseBody(inviteSchema, body)
+    if (parsed.error) return error(parsed.error, 400)
 
-    const result = await createInvite(user.id, data.email, data.role)
+    const result = await createInvite(
+      user.id,
+      parsed.data.email,
+      parsed.data.role,
+    )
     return success(result, 201)
   } catch (err: unknown) {
     return error(

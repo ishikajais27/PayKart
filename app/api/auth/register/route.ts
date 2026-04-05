@@ -7,10 +7,14 @@ import { parseBody } from '@/lib/parse'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { data, error: parseError } = parseBody(registerSchema, body)
-    if (parseError) return errorResponse(parseError, 400)
+    const parsed = parseBody(registerSchema, body)
+    if (parsed.error) return errorResponse(parsed.error, 400)
 
-    const result = await registerUser(data.name, data.email, data.password)
+    const result = await registerUser(
+      parsed.data.name,
+      parsed.data.email,
+      parsed.data.password,
+    )
 
     const response = NextResponse.json(
       { success: true, data: result },
