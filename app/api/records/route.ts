@@ -143,7 +143,11 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const parsed = recordSchema.safeParse(body)
-    if (!parsed.success) return error(parsed.error.errors[0].message, 400)
+    if (!parsed.success)
+      return error(
+        (parsed as { success: false; error: any }).error.errors[0].message,
+        400,
+      )
 
     const record = await createRecord(user.id, parsed.data)
     return success(record, 201)
