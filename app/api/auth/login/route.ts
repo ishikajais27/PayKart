@@ -8,7 +8,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const parsed = loginSchema.safeParse(body)
     if (!parsed.success)
-      return errorResponse(parsed.error.errors[0].message, 400)
+      return errorResponse(
+        (loginSchema.safeParse(body) as { success: false; error: any }).error
+          .errors[0].message,
+        400,
+      )
 
     const result = await loginUser(parsed.data.email, parsed.data.password)
 
