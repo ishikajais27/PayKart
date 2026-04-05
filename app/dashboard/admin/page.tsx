@@ -2,6 +2,33 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
+function Spinner({ text = 'Loading...' }: { text?: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '60px',
+        gap: '16px',
+      }}
+    >
+      <div
+        style={{
+          width: '36px',
+          height: '36px',
+          border: '3px solid rgba(255,255,255,0.1)',
+          borderTop: '3px solid #6366f1',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+      <div style={{ color: '#64748b', fontSize: '14px' }}>{text}</div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
 type Tab =
   | 'dashboard'
   | 'history'
@@ -355,6 +382,11 @@ export default function AdminDashboard() {
   const [expStart, setExpStart] = useState('')
   const [expEnd, setExpEnd] = useState('')
   const [expMsg, setExpMsg] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(true)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [invitesLoading, setInvitesLoading] = useState(false)
+  const [auditLoading, setAuditLoading] = useState(false)
 
   const hdrs = (): Record<string, string> => ({
     'Content-Type': 'application/json',
@@ -369,53 +401,80 @@ export default function AdminDashboard() {
   }, [])
 
   const fetchSummary = useCallback(async () => {
-    const [sr, tr] = await Promise.all([
-      fetch('/api/dashboard/summary', { headers: hdrs() }),
-      fetch(`/api/dashboard/trends?period=${trendPeriod}`, { headers: hdrs() }),
-    ])
-    const sj = await sr.json()
-    const tj = await tr.json()
-    if (sj.success) setSummary(sj.data)
-    if (tj.success) setTrends(Array.isArray(tj.data) ? tj.data : [])
+    setSummaryLoading(true)
+    try {
+      const [sr, tr] = await Promise.all([
+        fetch(`/api/dashboard/summary`, { headers: hdrs() }),
+        fetch(`/api/dashboard/trends?period=${trendPeriod}`, {
+          headers: hdrs(),
+        }),
+      ])
+      const sj = await sr.json()
+      const tj = await tr.json()
+      if (sj.success) setSummary(sj.data)
+      if (tj.success) setTrends(Array.isArray(tj.data) ? tj.data : [])
+    } finally {
+      setSummaryLoading(false)
+    }
   }, [trendPeriod])
 
   const fetchHistory = useCallback(async () => {
     setHistErr('')
-    const p = new URLSearchParams()
-    if (filterType) p.set('type', filterType)
-    if (filterCat) p.set('category', filterCat)
-    if (filterStart) p.set('startDate', filterStart)
-    if (filterEnd) p.set('endDate', filterEnd)
-    if (showDeleted) p.set('includeDeleted', 'true')
-    const [rr, tr] = await Promise.all([
-      fetch(`/api/records?${p}`, { headers: hdrs() }),
-      fetch('/api/transfers', { headers: hdrs() }),
-    ])
-    const rj = await rr.json()
-    const tj = await tr.json()
-    if (rj.success) setRecords(rj.data)
-    else setHistErr(rj.message || 'Failed')
-    if (tj.success) setTransfers(tj.data)
+    setHistoryLoading(true)
+    try {
+      const p = new URLSearchParams()
+      if (filterType) p.set('type', filterType)
+      if (filterCat) p.set('category', filterCat)
+      if (filterStart) p.set('startDate', filterStart)
+      if (filterEnd) p.set('endDate', filterEnd)
+      if (showDeleted) p.set('includeDeleted', 'true')
+      const [rr, tr] = await Promise.all([
+        fetch(`/api/records?${p}`, { headers: hdrs() }),
+        fetch('/api/transfers', { headers: hdrs() }),
+      ])
+      const rj = await rr.json()
+      const tj = await tr.json()
+      if (rj.success) setRecords(rj.data)
+      else setHistErr(rj.message || 'Failed')
+      if (tj.success) setTransfers(tj.data)
+    } finally {
+      setHistoryLoading(false)
+    }
   }, [filterType, filterCat, filterStart, filterEnd, showDeleted])
 
   const fetchUsers = useCallback(async () => {
-    const r = await fetch('/api/users', { headers: hdrs() })
-    const j = await r.json()
-    if (j.success) setUsers(j.data)
-  }, [])
-
-  const fetchInvites = useCallback(async () => {
-    const r = await fetch('/api/invites', { headers: hdrs() })
-    const j = await r.json()
-    if (j.success) setInvites(j.data)
+    setUsersLoading(true)
+    try {
+      const r = await fetch('/api/users', { headers: hdrs() })
+      const j = await r.json()
+      if (j.success) setUsers(j.data)
+    } finally {
+      setUsersLoading(false)
+    }
   }, [])
 
   const fetchAudit = useCallback(async () => {
-    const q = auditEntity ? `?entity=${auditEntity}` : ''
-    const r = await fetch(`/api/audit${q}`, { headers: hdrs() })
-    const j = await r.json()
-    if (j.success) setAuditLogs(j.data)
+    setAuditLoading(true)
+    try {
+      const q = auditEntity ? `?entity=${auditEntity}` : ''
+      const r = await fetch(`/api/audit${q}`, { headers: hdrs() })
+      const j = await r.json()
+      if (j.success) setAuditLogs(j.data)
+    } finally {
+      setAuditLoading(false)
+    }
   }, [auditEntity])
+
+  const fetchInvites = useCallback(async () => {
+    setInvitesLoading(true)
+    try {
+      const r = await fetch('/api/invites', { headers: hdrs() })
+      const j = await r.json()
+      if (j.success) setInvites(j.data)
+    } finally {
+      setInvitesLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     setName(localStorage.getItem('name') || 'Admin')
@@ -1632,6 +1691,7 @@ export default function AdminDashboard() {
         )}
 
         {/* ── HISTORY ── */}
+        {/* ── HISTORY ── */}
         {tab === 'history' && (
           <div style={S.card}>
             <div
@@ -1782,189 +1842,197 @@ export default function AdminDashboard() {
             </div>
             {histMsg && <div style={S.success}>{histMsg}</div>}
             {histErr && <div style={S.errorBox}>{histErr}</div>}
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {[
-                      'User',
-                      'Type',
-                      'Category',
-                      'Amount',
-                      'Date',
-                      'Notes',
-                      'Source',
-                      'Status',
-                      'Actions',
-                    ].map((h) => (
-                      <th key={h} style={S.th}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyRows.map((row) => (
-                    <tr
-                      key={row.id}
-                      style={{ opacity: row.deletedAt ? 0.5 : 1 }}
-                    >
-                      <td style={S.td}>
-                        <div
+            {historyLoading ? (
+              <Spinner text="Loading transactions..." />
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {[
+                        'User',
+                        'Type',
+                        'Category',
+                        'Amount',
+                        'Date',
+                        'Notes',
+                        'Source',
+                        'Status',
+                        'Actions',
+                      ].map((h) => (
+                        <th key={h} style={S.th}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyRows.map((row) => (
+                      <tr
+                        key={row.id}
+                        style={{ opacity: row.deletedAt ? 0.5 : 1 }}
+                      >
+                        <td style={S.td}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '30px',
+                                height: '30px',
+                                borderRadius: '50%',
+                                background: ac(row.userName),
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                color: '#fff',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {row.userName.charAt(0)}
+                            </div>
+                            <div>
+                              <div
+                                style={{
+                                  fontSize: '13px',
+                                  fontWeight: 600,
+                                  color: C.text,
+                                }}
+                              >
+                                {row.userName}
+                              </div>
+                              <div style={{ fontSize: '11px', color: C.muted }}>
+                                {row.userEmail}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={S.td}>
+                          <span style={{ ...S.badge, ...badgeColor(row.type) }}>
+                            {row.type}
+                          </span>
+                        </td>
+                        <td style={S.td}>
+                          <span
+                            style={{ ...S.badge, ...badgeColor(row.category) }}
+                          >
+                            {row.category}
+                          </span>
+                        </td>
+                        <td
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
+                            ...S.td,
+                            fontWeight: 700,
+                            color: row.type === 'INCOME' ? C.green : C.red,
+                          }}
+                        >
+                          {row.type === 'INCOME' ? '+' : '−'}
+                          {fmt(row.amount)}
+                        </td>
+                        <td style={{ ...S.td, fontSize: '13px' }}>
+                          {new Date(row.date).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td
+                          style={{
+                            ...S.td,
+                            color: C.sub,
+                            fontSize: '13px',
+                            maxWidth: '160px',
                           }}
                         >
                           <div
                             style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '50%',
-                              background: ac(row.userName),
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '12px',
-                              fontWeight: 700,
-                              color: '#fff',
-                              flexShrink: 0,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
                           >
-                            {row.userName.charAt(0)}
+                            {row.notes || '—'}
                           </div>
-                          <div>
-                            <div
-                              style={{
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                color: C.text,
-                              }}
-                            >
-                              {row.userName}
-                            </div>
-                            <div style={{ fontSize: '11px', color: C.muted }}>
-                              {row.userEmail}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={S.td}>
-                        <span style={{ ...S.badge, ...badgeColor(row.type) }}>
-                          {row.type}
-                        </span>
-                      </td>
-                      <td style={S.td}>
-                        <span
-                          style={{ ...S.badge, ...badgeColor(row.category) }}
-                        >
-                          {row.category}
-                        </span>
-                      </td>
-                      <td
-                        style={{
-                          ...S.td,
-                          fontWeight: 700,
-                          color: row.type === 'INCOME' ? C.green : C.red,
-                        }}
-                      >
-                        {row.type === 'INCOME' ? '+' : '−'}
-                        {fmt(row.amount)}
-                      </td>
-                      <td style={{ ...S.td, fontSize: '13px' }}>
-                        {new Date(row.date).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </td>
-                      <td
-                        style={{
-                          ...S.td,
-                          color: C.sub,
-                          fontSize: '13px',
-                          maxWidth: '160px',
-                        }}
-                      >
-                        <div
-                          style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {row.notes || '—'}
-                        </div>
-                      </td>
-                      <td style={S.td}>
-                        <span
-                          style={{
-                            ...S.badge,
-                            background:
-                              row.kind === 'transfer'
-                                ? 'rgba(245,158,11,0.15)'
-                                : 'rgba(99,102,241,0.15)',
-                            color:
-                              row.kind === 'transfer' ? C.yellow : C.purple,
-                          }}
-                        >
-                          {row.kind === 'transfer'
-                            ? '💸 Transfer'
-                            : '📋 Record'}
-                        </span>
-                      </td>
-                      <td style={S.td}>
-                        <span
-                          style={{
-                            ...S.badge,
-                            ...badgeColor(row.deletedAt ? 'Deleted' : 'Active'),
-                          }}
-                        >
-                          {row.deletedAt ? 'Deleted' : 'Active'}
-                        </span>
-                      </td>
-                      <td style={S.td}>
-                        {row.kind === 'transfer' ? (
-                          <span style={{ color: '#475569', fontSize: '12px' }}>
-                            —
+                        </td>
+                        <td style={S.td}>
+                          <span
+                            style={{
+                              ...S.badge,
+                              background:
+                                row.kind === 'transfer'
+                                  ? 'rgba(245,158,11,0.15)'
+                                  : 'rgba(99,102,241,0.15)',
+                              color:
+                                row.kind === 'transfer' ? C.yellow : C.purple,
+                            }}
+                          >
+                            {row.kind === 'transfer'
+                              ? '💸 Transfer'
+                              : '📋 Record'}
                           </span>
-                        ) : !row.deletedAt ? (
-                          <button
-                            style={S.btnRed}
-                            onClick={() => softDelete(row.id)}
+                        </td>
+                        <td style={S.td}>
+                          <span
+                            style={{
+                              ...S.badge,
+                              ...badgeColor(
+                                row.deletedAt ? 'Deleted' : 'Active',
+                              ),
+                            }}
                           >
-                            Delete
-                          </button>
-                        ) : (
-                          <button
-                            style={S.btnOutline}
-                            onClick={() => restore(row.id)}
-                          >
-                            Restore
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {historyRows.length === 0 && (
-                    <tr>
-                      <td
-                        style={{
-                          ...S.td,
-                          textAlign: 'center',
-                          color: C.muted,
-                          padding: '48px',
-                        }}
-                        colSpan={9}
-                      >
-                        No transactions found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            {row.deletedAt ? 'Deleted' : 'Active'}
+                          </span>
+                        </td>
+                        <td style={S.td}>
+                          {row.kind === 'transfer' ? (
+                            <span
+                              style={{ color: '#475569', fontSize: '12px' }}
+                            >
+                              —
+                            </span>
+                          ) : !row.deletedAt ? (
+                            <button
+                              style={S.btnRed}
+                              onClick={() => softDelete(row.id)}
+                            >
+                              Delete
+                            </button>
+                          ) : (
+                            <button
+                              style={S.btnOutline}
+                              onClick={() => restore(row.id)}
+                            >
+                              Restore
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {historyRows.length === 0 && (
+                      <tr>
+                        <td
+                          style={{
+                            ...S.td,
+                            textAlign: 'center',
+                            color: C.muted,
+                            padding: '48px',
+                          }}
+                          colSpan={9}
+                        >
+                          No transactions found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -2100,7 +2168,31 @@ export default function AdminDashboard() {
                 onClick={addRecord}
                 disabled={recLoading}
               >
-                {recLoading ? 'Saving...' : '➕ Add Record'}
+                {recLoading ? (
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTop: '2px solid #fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                        display: 'inline-block',
+                      }}
+                    />
+                    Saving...
+                  </span>
+                ) : (
+                  '➕ Add Record'
+                )}
               </button>
             </div>
           </div>
@@ -2202,7 +2294,31 @@ export default function AdminDashboard() {
                   txLoading || (!!txAmount && parseFloat(txAmount) > balance)
                 }
               >
-                {txLoading ? 'Sending...' : '💸 Send Money'}
+                {txLoading ? (
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTop: '2px solid #fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                        display: 'inline-block',
+                      }}
+                    />
+                    Sending...
+                  </span>
+                ) : (
+                  '💸 Send Money'
+                )}
               </button>
             </div>
           </div>
@@ -2231,116 +2347,128 @@ export default function AdminDashboard() {
             </div>
             {userMsg && <div style={S.success}>{userMsg}</div>}
             {userErr && <div style={S.errorBox}>{userErr}</div>}
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {['User', 'Role', 'Balance', 'Status', 'Actions'].map(
-                      (h) => (
-                        <th key={h} style={S.th}>
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredUsers.map((u) => (
-                    <tr key={u.id}>
-                      <td style={S.td}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                          }}
-                        >
+            {usersLoading ? (
+              <Spinner text="Loading users..." />
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {['User', 'Role', 'Balance', 'Status', 'Actions'].map(
+                        (h) => (
+                          <th key={h} style={S.th}>
+                            {h}
+                          </th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((u) => (
+                      <tr key={u.id}>
+                        <td style={S.td}>
                           <div
                             style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '50%',
-                              background: ac(u.name),
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '14px',
-                              fontWeight: 700,
-                              color: '#fff',
+                              gap: '10px',
                             }}
                           >
-                            {u.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 600, color: C.text }}>
-                              {u.name}
+                            <div
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: ac(u.name),
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                color: '#fff',
+                              }}
+                            >
+                              {u.name.charAt(0)}
                             </div>
-                            <div style={{ fontSize: '12px', color: C.muted }}>
-                              {u.email}
+                            <div>
+                              <div style={{ fontWeight: 600, color: C.text }}>
+                                {u.name}
+                              </div>
+                              <div style={{ fontSize: '12px', color: C.muted }}>
+                                {u.email}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td style={S.td}>
-                        <select
-                          style={{
-                            ...S.input,
-                            width: 'auto',
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                          }}
-                          value={u.role}
-                          onChange={(e) => updateUserRole(u.id, e.target.value)}
-                        >
-                          <option value="VIEWER">VIEWER</option>
-                          <option value="ANALYST">ANALYST</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                      </td>
-                      <td style={{ ...S.td, color: C.green, fontWeight: 700 }}>
-                        {fmt(u.balance)}
-                      </td>
-                      <td style={S.td}>
-                        <span
-                          style={{
-                            ...S.badge,
-                            ...badgeColor(u.isActive ? 'Active' : 'Inactive'),
-                          }}
-                        >
-                          {u.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-                      <td style={{ ...S.td }}>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            style={S.btnOutline}
-                            onClick={() => toggleActive(u.id, u.isActive)}
+                        </td>
+                        <td style={S.td}>
+                          <select
+                            style={{
+                              ...S.input,
+                              width: 'auto',
+                              padding: '4px 8px',
+                              fontSize: '12px',
+                            }}
+                            value={u.role}
+                            onChange={(e) =>
+                              updateUserRole(u.id, e.target.value)
+                            }
                           >
-                            {u.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            style={S.btnRed}
-                            onClick={() => deleteUser(u.id)}
+                            <option value="VIEWER">VIEWER</option>
+                            <option value="ANALYST">ANALYST</option>
+                            <option value="ADMIN">ADMIN</option>
+                          </select>
+                        </td>
+                        <td
+                          style={{ ...S.td, color: C.green, fontWeight: 700 }}
+                        >
+                          {fmt(u.balance)}
+                        </td>
+                        <td style={S.td}>
+                          <span
+                            style={{
+                              ...S.badge,
+                              ...badgeColor(u.isActive ? 'Active' : 'Inactive'),
+                            }}
                           >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredUsers.length === 0 && (
-                    <tr>
-                      <td
-                        style={{ ...S.td, textAlign: 'center', color: C.muted }}
-                        colSpan={5}
-                      >
-                        No users found
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            {u.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td style={S.td}>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              style={S.btnOutline}
+                              onClick={() => toggleActive(u.id, u.isActive)}
+                            >
+                              {u.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              style={S.btnRed}
+                              onClick={() => deleteUser(u.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredUsers.length === 0 && (
+                      <tr>
+                        <td
+                          style={{
+                            ...S.td,
+                            textAlign: 'center',
+                            color: C.muted,
+                          }}
+                          colSpan={5}
+                        >
+                          No users found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -2444,7 +2572,30 @@ export default function AdminDashboard() {
                 onClick={createInvite}
                 disabled={invLoading}
               >
-                {invLoading ? 'Creating...' : '✉️ Send Invite'}
+                {invLoading ? (
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '16px',
+                        height: '16px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        borderTop: '2px solid #fff',
+                        borderRadius: '50%',
+                        animation: 'spin 0.8s linear infinite',
+                        display: 'inline-block',
+                      }}
+                    />
+                    Creating...
+                  </span>
+                ) : (
+                  '✉️ Send Invite'
+                )}
               </button>
             </div>
             <div style={S.card}>
@@ -2458,69 +2609,79 @@ export default function AdminDashboard() {
               >
                 All Invites
               </h2>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    {['Email', 'Role', 'Created By', 'Expires', 'Status'].map(
-                      (h) => (
-                        <th key={h} style={S.th}>
-                          {h}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {invites.map((inv) => {
-                    const expired = new Date(inv.expiresAt) < new Date()
-                    const status = inv.usedAt
-                      ? 'Used'
-                      : expired
-                        ? 'Expired'
-                        : 'Active'
-                    return (
-                      <tr key={inv.id}>
-                        <td style={S.td}>{inv.email}</td>
-                        <td style={S.td}>
-                          <span style={{ ...S.badge, ...badgeColor(inv.role) }}>
-                            {inv.role}
-                          </span>
-                        </td>
-                        <td style={S.td}>{inv.creator.name}</td>
-                        <td style={S.td}>
-                          {new Date(inv.expiresAt).toLocaleDateString()}
-                        </td>
-                        <td style={S.td}>
-                          <span
-                            style={{
-                              ...S.badge,
-                              ...badgeColor(
-                                status === 'Active'
-                                  ? 'Active'
-                                  : status === 'Used'
-                                    ? 'VIEWER'
-                                    : 'Deleted',
-                              ),
-                            }}
-                          >
-                            {status}
-                          </span>
+              {invitesLoading ? (
+                <Spinner text="Loading invites..." />
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      {['Email', 'Role', 'Created By', 'Expires', 'Status'].map(
+                        (h) => (
+                          <th key={h} style={S.th}>
+                            {h}
+                          </th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invites.map((inv) => {
+                      const expired = new Date(inv.expiresAt) < new Date()
+                      const status = inv.usedAt
+                        ? 'Used'
+                        : expired
+                          ? 'Expired'
+                          : 'Active'
+                      return (
+                        <tr key={inv.id}>
+                          <td style={S.td}>{inv.email}</td>
+                          <td style={S.td}>
+                            <span
+                              style={{ ...S.badge, ...badgeColor(inv.role) }}
+                            >
+                              {inv.role}
+                            </span>
+                          </td>
+                          <td style={S.td}>{inv.creator.name}</td>
+                          <td style={S.td}>
+                            {new Date(inv.expiresAt).toLocaleDateString()}
+                          </td>
+                          <td style={S.td}>
+                            <span
+                              style={{
+                                ...S.badge,
+                                ...badgeColor(
+                                  status === 'Active'
+                                    ? 'Active'
+                                    : status === 'Used'
+                                      ? 'VIEWER'
+                                      : 'Deleted',
+                                ),
+                              }}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {invites.length === 0 && (
+                      <tr>
+                        <td
+                          style={{
+                            ...S.td,
+                            textAlign: 'center',
+                            color: C.muted,
+                          }}
+                          colSpan={5}
+                        >
+                          No invites yet
                         </td>
                       </tr>
-                    )
-                  })}
-                  {invites.length === 0 && (
-                    <tr>
-                      <td
-                        style={{ ...S.td, textAlign: 'center', color: C.muted }}
-                        colSpan={5}
-                      >
-                        No invites yet
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         )}
@@ -2561,61 +2722,65 @@ export default function AdminDashboard() {
                 Refresh
               </button>
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  {['User', 'Action', 'Entity', 'Entity ID', 'Time'].map(
-                    (h) => (
-                      <th key={h} style={S.th}>
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {auditLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td style={S.td}>
-                      <div style={{ fontWeight: 600, color: C.text }}>
-                        {log.user.name}
-                      </div>
-                      <div style={{ fontSize: '11px', color: C.muted }}>
-                        {log.user.email}
-                      </div>
-                    </td>
-                    <td style={S.td}>
-                      <span style={{ ...S.badge, ...badgeColor(log.action) }}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td style={S.td}>{log.entity}</td>
-                    <td
-                      style={{
-                        ...S.td,
-                        fontFamily: 'monospace',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {log.entityId.slice(0, 12)}...
-                    </td>
-                    <td style={S.td}>
-                      {new Date(log.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-                {auditLogs.length === 0 && (
+            {auditLoading ? (
+              <Spinner text="Loading audit logs..." />
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
                   <tr>
-                    <td
-                      style={{ ...S.td, textAlign: 'center', color: C.muted }}
-                      colSpan={5}
-                    >
-                      No logs found
-                    </td>
+                    {['User', 'Action', 'Entity', 'Entity ID', 'Time'].map(
+                      (h) => (
+                        <th key={h} style={S.th}>
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <tr key={log.id}>
+                      <td style={S.td}>
+                        <div style={{ fontWeight: 600, color: C.text }}>
+                          {log.user.name}
+                        </div>
+                        <div style={{ fontSize: '11px', color: C.muted }}>
+                          {log.user.email}
+                        </div>
+                      </td>
+                      <td style={S.td}>
+                        <span style={{ ...S.badge, ...badgeColor(log.action) }}>
+                          {log.action}
+                        </span>
+                      </td>
+                      <td style={S.td}>{log.entity}</td>
+                      <td
+                        style={{
+                          ...S.td,
+                          fontFamily: 'monospace',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {log.entityId.slice(0, 12)}...
+                      </td>
+                      <td style={S.td}>
+                        {new Date(log.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                  {auditLogs.length === 0 && (
+                    <tr>
+                      <td
+                        style={{ ...S.td, textAlign: 'center', color: C.muted }}
+                        colSpan={5}
+                      >
+                        No logs found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
