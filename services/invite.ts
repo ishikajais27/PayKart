@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/services/audit.service'
+import { logAudit } from '@/services/audit'
 import { Role } from '@/types'
 import crypto from 'crypto'
 import nodemailer from 'nodemailer'
@@ -18,7 +18,7 @@ function getTransporter() {
 
 async function sendInviteEmail(email: string, token: string, role: string) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  const inviteUrl = `${baseUrl}/invite/accept?token=${token}`
+  const inviteUrl = `${baseUrl}/invite?token=${token}`
 
   const transporter = getTransporter()
   await transporter.sendMail({
@@ -80,7 +80,7 @@ export async function createInvite(adminId: string, email: string, role: Role) {
     email,
     role,
     expiresAt,
-    inviteUrl: `${baseUrl}/invite/accept?token=${token}`,
+    inviteUrl: `${baseUrl}/invite?token=${token}`,
   }
 }
 

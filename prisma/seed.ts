@@ -23,7 +23,6 @@ function randomBetween(min: number, max: number) {
 
 async function seedRecordsForUser(userId: string) {
   const data = []
-
   for (let month = 5; month >= 0; month--) {
     const salaryDate = new Date()
     salaryDate.setMonth(salaryDate.getMonth() - month)
@@ -68,9 +67,161 @@ async function seedRecordsForUser(userId: string) {
       })
     }
   }
-
   for (const record of data) {
     await prisma.financialRecord.create({ data: record })
+  }
+}
+
+async function seedTransfers(
+  adminId: string,
+  analystId: string,
+  viewerId: string,
+) {
+  // Clear old transfers
+  await prisma.transfer.deleteMany({
+    where: {
+      OR: [
+        { fromId: { in: [adminId, analystId, viewerId] } },
+        { toId: { in: [adminId, analystId, viewerId] } },
+      ],
+    },
+  })
+
+  const transferData = [
+    // Admin → Analyst
+    {
+      fromId: adminId,
+      toId: analystId,
+      amount: 15000,
+      notes: 'Project bonus',
+      daysAgo: 2,
+    },
+    {
+      fromId: adminId,
+      toId: analystId,
+      amount: 5000,
+      notes: 'Travel reimbursement',
+      daysAgo: 10,
+    },
+    {
+      fromId: adminId,
+      toId: analystId,
+      amount: 20000,
+      notes: 'Q3 incentive',
+      daysAgo: 35,
+    },
+    // Admin → Viewer
+    {
+      fromId: adminId,
+      toId: viewerId,
+      amount: 8000,
+      notes: 'Freelance payment',
+      daysAgo: 5,
+    },
+    {
+      fromId: adminId,
+      toId: viewerId,
+      amount: 3500,
+      notes: 'Expense reimbursement',
+      daysAgo: 20,
+    },
+    // Analyst → Admin
+    {
+      fromId: analystId,
+      toId: adminId,
+      amount: 12000,
+      notes: 'Loan repayment',
+      daysAgo: 7,
+    },
+    {
+      fromId: analystId,
+      toId: adminId,
+      amount: 2500,
+      notes: 'Shared bill',
+      daysAgo: 15,
+    },
+    // Analyst → Viewer
+    {
+      fromId: analystId,
+      toId: viewerId,
+      amount: 4000,
+      notes: 'Team lunch',
+      daysAgo: 3,
+    },
+    {
+      fromId: analystId,
+      toId: viewerId,
+      amount: 7500,
+      notes: 'Referral bonus',
+      daysAgo: 25,
+    },
+    // Viewer → Admin
+    {
+      fromId: viewerId,
+      toId: adminId,
+      amount: 1000,
+      notes: 'Office supplies',
+      daysAgo: 12,
+    },
+    // Viewer → Analyst
+    {
+      fromId: viewerId,
+      toId: analystId,
+      amount: 2000,
+      notes: 'Split bill',
+      daysAgo: 8,
+    },
+    // More history - 2 months ago
+    {
+      fromId: adminId,
+      toId: analystId,
+      amount: 18000,
+      notes: 'Monthly stipend',
+      daysAgo: 60,
+    },
+    {
+      fromId: adminId,
+      toId: viewerId,
+      amount: 10000,
+      notes: 'Project payment',
+      daysAgo: 55,
+    },
+    {
+      fromId: analystId,
+      toId: viewerId,
+      amount: 5000,
+      notes: 'Gift',
+      daysAgo: 50,
+    },
+    {
+      fromId: analystId,
+      toId: adminId,
+      amount: 9000,
+      notes: 'Dues clearance',
+      daysAgo: 45,
+    },
+    {
+      fromId: viewerId,
+      toId: analystId,
+      amount: 3000,
+      notes: 'Borrowed return',
+      daysAgo: 40,
+    },
+  ]
+
+  for (const t of transferData) {
+    const date = new Date()
+    date.setDate(date.getDate() - t.daysAgo)
+    // Also update balances to reflect these transfers
+    await prisma.transfer.create({
+      data: {
+        fromId: t.fromId,
+        toId: t.toId,
+        amount: t.amount,
+        notes: t.notes,
+        createdAt: date,
+      },
+    })
   }
 }
 
@@ -79,7 +230,7 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@test.com' },
-    update: { balance: 500000 }, // ← updates balance if user already exists
+    update: { balance: 500000 },
     create: {
       name: 'Admin User',
       email: 'admin@test.com',
@@ -122,13 +273,15 @@ async function main() {
   await seedRecordsForUser(analyst.id)
   await seedRecordsForUser(viewer.id)
 
+  await seedTransfers(admin.id, analyst.id, viewer.id)
+
   console.log('✅ Seed complete')
   console.log('─────────────────────────────────')
   console.log('admin@test.com    → password123  (ADMIN)    balance: ₹5,00,000')
   console.log('analyst@test.com  → password123  (ANALYST)  balance: ₹2,00,000')
   console.log('viewer@test.com   → password123  (VIEWER)   balance: ₹1,00,000')
   console.log('─────────────────────────────────')
-  console.log('Each user has ~6 months of realistic financial records')
+  console.log('Each user has ~6 months of records + realistic transfer history')
 }
 
 main()

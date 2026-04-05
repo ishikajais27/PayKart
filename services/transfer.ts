@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { logAudit } from '@/services/audit.service'
+import { logAudit } from '@/services/audit'
 
 export async function sendMoney(
   fromId: string,

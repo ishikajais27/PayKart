@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { authenticate } from '@/middleware/auth.middleware'
 import { authorize } from '@/middleware/role.middleware'
-import { getAllUsers } from '@/services/user.service'
+import { getAllUsers } from '@/services/user'
 import { success, error } from '@/lib/response'
 import { TokenPayload } from '@/types'
 

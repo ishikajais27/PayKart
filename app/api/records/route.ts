@@ -81,12 +81,8 @@
 import { NextRequest } from 'next/server'
 import { authenticate } from '@/middleware/auth.middleware'
 import { authorize } from '@/middleware/role.middleware'
-import {
-  createRecord,
-  getRecords,
-  exportRecords,
-} from '@/services/record.service'
-import { recordSchema } from '@/validators/record.validator'
+import { createRecord, getRecords, exportRecords } from '@/services/record'
+import { recordSchema } from '@/validators/record'
 import { success, error } from '@/lib/response'
 import { TokenPayload, RecordType } from '@/types'
 

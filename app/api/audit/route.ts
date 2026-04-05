@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { authenticate } from '@/middleware/auth.middleware'
 import { authorize } from '@/middleware/role.middleware'
-import { getAuditLogs } from '@/services/audit.service'
+import { getAuditLogs } from '@/services/audit'
 import { success, error } from '@/lib/response'
 import { TokenPayload } from '@/types'
 

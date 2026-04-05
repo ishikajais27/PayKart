@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { loginSchema } from '@/validators/auth.validator'
-import { loginUser } from '@/services/auth.service'
+import { loginSchema } from '@/validators/auth'
+import { loginUser } from '@/services/auth'
 import { errorResponse } from '@/lib/response'
 
 export async function POST(req: NextRequest) {
