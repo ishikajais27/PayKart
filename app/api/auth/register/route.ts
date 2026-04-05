@@ -7,7 +7,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const parsed = registerSchema.safeParse(body)
-    if (!parsed.success) return errorResponse('Validation failed', 422)
+    if (!parsed.success) {
+      const message = parsed.error.errors[0]?.message ?? 'Invalid input'
+      return errorResponse(message, 400)
+    }
+
     const result = await registerUser(
       parsed.data.name,
       parsed.data.email,
