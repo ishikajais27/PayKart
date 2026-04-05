@@ -47,7 +47,11 @@ export async function PATCH(
 
     const body = await req.json()
     const parsed = updateSchema.safeParse(body)
-    if (!parsed.success) return error(parsed.error.errors[0].message, 400)
+    if (!parsed.success)
+      return error(
+        (parsed as { success: false; error: any }).error.errors[0].message,
+        400,
+      )
 
     const { id } = await params
     if (id === user.id && parsed.data.isActive === false)
