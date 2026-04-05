@@ -38,7 +38,7 @@ export async function updateUser(
 ) {
   return prisma.user.update({
     where: { id },
-    data,
+    data: data as any,
     select: {
       id: true,
       name: true,

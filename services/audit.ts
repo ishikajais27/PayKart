@@ -11,7 +11,7 @@ interface AuditParams {
 
 export async function logAudit(params: AuditParams) {
   try {
-    await prisma.auditLog.create({ data: params })
+    await prisma.auditLog.create({ data: params as any })
   } catch {
     // Audit logging should never break the main flow
     console.error('Audit log failed:', params)

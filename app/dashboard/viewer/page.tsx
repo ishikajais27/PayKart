@@ -1186,7 +1186,7 @@ export default function ViewerDashboard() {
       source: string
     }[] = []
     records
-      .filter((r) => !r.deletedAt)
+      .filter((r) => !(r as any).deletedAt)
       .forEach((r) =>
         rows.push({
           id: r.id,

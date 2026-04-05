@@ -2371,7 +2371,7 @@ export default function AnalystDashboard() {
                       {catTrendData.map((m, mi) => {
                         const maxCat = Math.max(
                           ...catTrendData.flatMap((x) =>
-                            topCats4.map((c) => (x[c] as number) || 0),
+                            topCats4.map((c) => ((x as any)[c] as number) || 0),
                           ),
                           1,
                         )
@@ -2394,7 +2394,7 @@ export default function AnalystDashboard() {
                               }}
                             >
                               {topCats4.map((cat, ci) => {
-                                const val = (m[cat] as number) || 0
+                                const val = ((m as any)[cat] as number) || 0
                                 const h = Math.round((val / maxCat) * 120)
                                 return (
                                   <div
@@ -2418,7 +2418,7 @@ export default function AnalystDashboard() {
                                 textAlign: 'center' as const,
                               }}
                             >
-                              {m.label as string}
+                              {(m as any).label as string}
                             </div>
                           </div>
                         )
