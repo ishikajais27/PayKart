@@ -9,7 +9,7 @@ export function parseBody<T>(
 ): ParseSuccess<T> | ParseFailure {
   const result = schema.safeParse(body)
   if (!result.success) {
-    const message = result.error?.errors?.[0]?.message ?? 'Invalid input'
+    const message = result.error?.issues?.[0]?.message ?? 'Invalid input'
     return { data: null, error: message }
   }
   return { data: result.data, error: null }
