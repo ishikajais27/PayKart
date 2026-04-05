@@ -38,7 +38,11 @@ export async function POST(req: NextRequest) {
     if (denied) return denied
     const body = await req.json()
     const parsed = inviteSchema.safeParse(body)
-    if (!parsed.success) return error(parsed.error.errors[0].message, 400)
+    if (!parsed.success)
+      return error(
+        (parsed as { success: false; error: any }).error.errors[0].message,
+        400,
+      )
     const result = await createInvite(
       user.id,
       parsed.data.email,
