@@ -47,15 +47,14 @@ export async function PATCH(
 
     const body = await req.json()
     const parsed = updateSchema.safeParse(body)
-
     if (!parsed.success) {
-      const message = parsed.error.errors[0]?.message ?? 'Invalid input'
-      return error(message, 400)
+      return error(parsed.error.errors[0]?.message ?? 'Invalid input', 400)
     }
 
     const { id } = await params
-    if (id === user.id && parsed.data.isActive === false)
+    if (id === user.id && parsed.data.isActive === false) {
       return error('Cannot deactivate your own account', 400)
+    }
 
     const before = await getUserById(id)
     const updated = await updateUser(id, parsed.data)

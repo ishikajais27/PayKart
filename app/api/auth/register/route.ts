@@ -1,24 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { registerSchema } from '@/validators/auth'
 import { registerUser } from '@/services/auth'
-import { successResponse, errorResponse } from '@/lib/response'
+import { errorResponse } from '@/lib/response'
+import { parseBody } from '@/lib/parse'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const parsed = registerSchema.safeParse(body)
-    if (!parsed.success) {
-      const message = parsed.error.errors[0]?.message ?? 'Invalid input'
-      return errorResponse(message, 400)
-    }
+    const { data, error: parseError } = parseBody(registerSchema, body)
+    if (parseError) return errorResponse(parseError, 400)
 
-    const result = await registerUser(
-      parsed.data.name,
-      parsed.data.email,
-      parsed.data.password,
-    )
+    const result = await registerUser(data.name, data.email, data.password)
 
-    const res = successResponse(result, 201)
     const response = NextResponse.json(
       { success: true, data: result },
       { status: 201 },

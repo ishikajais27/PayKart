@@ -1,9 +1,9 @@
-// app/api/invites/route.ts
 import { NextRequest } from 'next/server'
 import { authenticate } from '@/middleware/auth.middleware'
 import { authorize } from '@/middleware/role.middleware'
 import { createInvite, listInvites } from '@/services/invite'
 import { success, error } from '@/lib/response'
+import { parseBody } from '@/lib/parse'
 import { TokenPayload } from '@/types'
 import { z } from 'zod'
 
@@ -36,17 +36,12 @@ export async function POST(req: NextRequest) {
     const user = auth as TokenPayload
     const denied = authorize(user.role, ['ADMIN'])
     if (denied) return denied
+
     const body = await req.json()
-    const parsed = inviteSchema.safeParse(body)
-    if (!parsed.success) {
-      const message = parsed.error.errors[0]?.message ?? 'Invalid input'
-      return error(message, 400)
-    }
-    const result = await createInvite(
-      user.id,
-      parsed.data.email,
-      parsed.data.role,
-    )
+    const { data, error: parseError } = parseBody(inviteSchema, body)
+    if (parseError) return error(parseError, 400)
+
+    const result = await createInvite(user.id, data.email, data.role)
     return success(result, 201)
   } catch (err: unknown) {
     return error(
