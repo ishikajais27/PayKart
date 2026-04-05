@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const parsed = parseBody(registerSchema, body)
-    if (parsed.error) return errorResponse(parsed.error, 400)
+    if (parsed.error || !parsed.data)
+      return errorResponse(parsed.error ?? 'Invalid input', 400)
 
     const result = await registerUser(
       parsed.data.name,

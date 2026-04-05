@@ -4,6 +4,7 @@ import { authorize } from '@/middleware/role.middleware'
 import { getUserById, updateUser, deleteUser } from '@/services/user'
 import { logAudit } from '@/services/audit'
 import { success, error } from '@/lib/response'
+import { parseBody } from '@/lib/parse'
 import { TokenPayload } from '@/types'
 import { z } from 'zod'
 
@@ -46,10 +47,9 @@ export async function PATCH(
     if (denied) return denied
 
     const body = await req.json()
-    const parsed = updateSchema.safeParse(body)
-    if (!parsed.success) {
-      return error(parsed.error.errors[0]?.message ?? 'Invalid input', 400)
-    }
+    const parsed = parseBody(updateSchema, body)
+    if (parsed.error || !parsed.data)
+      return error(parsed.error ?? 'Invalid input', 400)
 
     const { id } = await params
     if (id === user.id && parsed.data.isActive === false) {

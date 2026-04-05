@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { data, error: parseError } = parseBody(recordSchema, body)
-    if (parseError) return error(parseError, 400)
+    if (parseError || !data) return error(parseError ?? 'Invalid input', 400)
 
     const record = await createRecord(user.id, data)
     return success(record, 201)

@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const parsed = parseBody(inviteSchema, body)
-    if (parsed.error) return error(parsed.error, 400)
+    if (parsed.error || !parsed.data)
+      return error(parsed.error ?? 'Invalid input', 400)
 
     const result = await createInvite(
       user.id,

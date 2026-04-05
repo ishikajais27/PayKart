@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { data, error: parseError } = parseBody(transferSchema, body)
-    if (parseError) return error(parseError, 400)
+    if (parseError || !data) return error(parseError ?? 'Invalid input', 400)
 
     const result = await sendMoney(
       user.id,
