@@ -3,8 +3,11 @@ import { redis } from '@/lib/redis'
 
 export async function getSummary(userId: string, role: string) {
   const cacheKey = `summary:${role === 'ADMIN' ? 'all' : userId}`
-  const cached = await redis.get(cacheKey)
-  if (cached) return JSON.parse(cached)
+
+  if (redis) {
+    const cached = await redis.get(cacheKey)
+    if (cached) return JSON.parse(cached)
+  }
 
   const where = role !== 'ADMIN' ? { userId } : {}
 
@@ -26,7 +29,11 @@ export async function getSummary(userId: string, role: string) {
   }
 
   const result = { totalIncome, totalExpenses, netBalance, categoryTotals }
-  await redis.set(cacheKey, JSON.stringify(result), 'EX', 60)
+
+  if (redis) {
+    await redis.set(cacheKey, JSON.stringify(result), 'EX', 60)
+  }
+
   return result
 }
 
