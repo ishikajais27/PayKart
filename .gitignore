@@ -1,55 +1,47 @@
-# 🔹 Node modules
+# Node modules
 node_modules/
 
-# 🔹 Next.js build output
+# Next.js build output
 .next/
 out/
+
+# Production build
+dist/
 build/
 
-# 🔹 Environment variables (VERY IMPORTANT)
-.env
-.env.local
-
-
-# 🔹 Logs
+# Logs
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 
-# 🔹 OS files
+
+.env
+.env.local
+
+
+# Prisma
+prisma/migrations/
+# (Keep migrations if you want version control; remove this line if needed)
+
+# TypeScript
+*.tsbuildinfo
+
+# OS files
 .DS_Store
 Thumbs.db
 
-# 🔹 VS Code / IDE
+# IDE / Editor
 .vscode/
 .idea/
 
-# 🔹 TypeScript
-*.tsbuildinfo
-next-env.d.ts
+# Temporary files
+*.tmp
+*.temp
 
-# 🔹 Prisma
-prisma/migrations/
-# (keep schema.prisma but ignore migrations if you want)
-
-# 🔹 Temporary files
-.tmp/
-.temp/
-.cache/
-
-# 🔹 Coverage (if you add testing later)
+# Coverage reports
 coverage/
 
-# 🔹 Build artifacts
-dist/
-
-# 🔹 Misc
+# Misc
 *.pem
-*.key
-
-# 🔹 Debug
-*.swp
-*.swo
